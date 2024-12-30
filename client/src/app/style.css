@@ -1,10 +1,26 @@
  /* styles.css or tailwind.css */
-@tailwind base;
+/* @tailwind base;
 @tailwind components;
-@tailwind utilities;
+@tailwind utilities; */
+
+img.white-svg {
+  filter: brightness(0) invert(1); /* Turns the SVG to white */
+}
 
 
-  .ull li {
+* {
+  color: #000814;
+}
+
+footer * {
+  color: white;
+}
+
+/* footer {
+  color: inherit;
+} */
+
+  /* .ull li {
     justify-content: space-between;
   }
 
@@ -16,5 +32,5 @@
 
   .hover-nav-btn {
     @apply hover:bg-blue-500 transition-all p-2;
-  }
+  } */
 

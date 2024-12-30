@@ -17,6 +17,9 @@ export default {
         "brandeis-blue": "#0A6CFF",
         "marian-blue": "#00398F",
         "rich-black": "#000814",
+        "platinum-gray": "#E7E7E7",
+        "brown": "#AA3300",
+        'black-50': 'rgba(0, 0, 0, 0.1)'
       },
 
       borderRadius: {
