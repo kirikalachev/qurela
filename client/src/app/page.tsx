@@ -17,7 +17,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-col items-center min-h-[100vh] pt-10 gap-3 justify-center">
+    <main className="flex flex-col items-center min-h-[100vh] pt-12 gap-3 justify-center">
       <h2 className="text-3xl font-bold text-center">{inputValue}</h2>
       <div className="flex justify-center items-center flex-col w-full">
         <form

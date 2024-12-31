@@ -8,16 +8,22 @@ export const metadata: Metadata = {
 
 export default function Home() {
     return (
-      <div className="min-h-[100vh]">
-        <div className="flex w-full bg-yellow-600">
-          <div className=" w-5">
-            <div className="bg-red-600 m-10 w-[100%] h-10">rge</div>
-            <div className="bg-red-100 m-10">erg</div>
+      <main className="flex items-center pt-12 min-h-[100vh] items-center">
+        <div className="flex w-[80%] h-[80vh] m-auto gap-7 items-stretched">
+          <div className="flex-[3] flex gap-6 flex-col justify-stretched">
+            <form className="bg-red-600 h-10 rounded-xl flex-[4]">
+              <input type="text" placeholder="Съобщение до Qurela"></input>
+              <input type="submit"></input>
+            </form>
+
+            <div className="bg-red-100 h-10 rounded-xl flex-[5]">output</div>
           </div>
 
-          <div></div>
+          <div className="flex-[2] bg-orange-700 rounded-xl items-stretched"> 
+            history
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
   
