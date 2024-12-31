@@ -1,23 +1,56 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useReducer, useState, useEffect } from 'react';
 
 import Image from 'next/image';
 import Notification from '@/app/notification.svg';
+import NotificationClicked from '@/app/notification-clicked.svg';
 import UserCircle from '@/app/user-circle.svg';
+import UserCircleClicked from '@/app/user-circle-clicked.svg';
 import ChevronDown from '@/app/chevron-down.svg';
 import ArrowUp from '@/app/arrow-up.svg';
 import Plus from '@/app/plus.svg';
 
 import '@/app/style.css';
+// Define the types for the state and action
 
-const Navbar = () => {
+interface ToggleState {
+  notification: boolean;
+  profile: boolean;
+}
+
+// Define the ToggleAction interface
+interface ToggleAction {
+  type: 'TOGGLE' | 'CLOSE'; // 'TOGGLE' for toggling dropdown, 'CLOSE' for closing all dropdowns
+  payload?: 'notification' | 'profile'; // Only 'notification' or 'profile' can be the payload
+}
+
+// Initial state of dropdowns
+const initialState: ToggleState = {
+  notification: false,
+  profile: false,
+};
+
+// Reducer function to manage the state of dropdowns
+const toggleReducer = (state: ToggleState, action: ToggleAction): ToggleState => {
+  switch (action.type) {
+    case 'TOGGLE':
+      // Close the other dropdown if one is already open, otherwise toggle the clicked one
+      return {
+        ...state,
+        [action.payload!]: !state[action.payload!],
+        // Close the other dropdown
+        ...(action.payload === 'notification' ? { profile: false } : { notification: false }),
+      };
+    case 'CLOSE':
+      return { notification: false, profile: false }; // Close all dropdowns
+    default:
+      return state;
+  }
+};
+
+const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isNotificationsOpened, setisNotificationsOpened] = useState(false)
-
-  const handleNotifications = () => {
-    setisNotificationsOpened((prev) => !prev);
-    console.log(isNotificationsOpened);
-  };
+  const [state, dispatch] = useReducer(toggleReducer, initialState);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -35,135 +68,165 @@ const Navbar = () => {
     };
   }, []);
 
+  // Handle outside clicks to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const notificationElement = document.getElementById('notification');
+      const profileElement = document.getElementById('profile');
+      // Close both dropdowns if click is outside of them
+      if (
+        notificationElement && !notificationElement.contains(event.target as Node) &&
+        profileElement && !profileElement.contains(event.target as Node)
+      ) {
+        dispatch({ type: 'CLOSE' });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Toggle notification or profile dropdown
+  const toggleNavBtns = (e: React.MouseEvent, key: 'notification' | 'profile') => {
+    dispatch({ type: 'TOGGLE', payload: key });
+  };
+
   return (
-<nav
-  className={`fixed top-0 w-full flex h-[7vh] items-center justify-between select-none transition-all ${isScrolled ? 'bg-marian-blue p-[2%]' : 'p-[3%]'}
-  `}
->
-  <h1
-    className={`
-      text-5xl font-bold cursor-pointer
-      ${isScrolled ? 'text-white' : ''}
-    `}
-  >
-    Qurela
-  </h1>
-
-  <ul className={`flex justify-between items-stretch basis-[35%] text-center cursor-pointer transition-all ${isScrolled ? ' basis-[30%]' : ''}`}>
-  
-    <li
-      className={`flex transition-all items-center justify-end group p-2 rounded-full relative ${
-        isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
+    <nav
+      className={`fixed top-0 w-full flex h-[7vh] items-center justify-between select-none transition-all ${
+        isScrolled ? 'bg-marian-blue p-[2%]' : 'p-[3%]'
       }`}
     >
-      <span className={`z-1 ${isScrolled ? 'text-white' : ''}`}>Асистент</span>
-      <Image
-        src={ChevronDown}
-        alt=" "
-        className={`h-6 w-auto ${isScrolled ? 'white-svg' : ''}`}
-      />
-      <ul className='hidden group-hover:block absolute bg-alice-blue shadow-lg rounded-2xl p-1 w-inherit z-[-1] top-[100%] right-0 overflow-hidden'>
-        <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>Проверка</li>
-        <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>Въпрос</li>
-        <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>Обобщаване</li>
-      </ul>
-    </li>
-    
-    <li
-      className={`flex transition-all items-center justify-center rounded-full ${
-        isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-      }`}
-    >
-      <span className={`${isScrolled ? 'text-white' : ''}`}>Форум</span>
-    </li>
+      <h1 className={`text-5xl font-bold cursor-pointer ${isScrolled ? 'text-white' : ''}`}>
+        Qurela
+      </h1>
 
-    <li
-      className={`flex transition-all items-center justify-center rounded-full ${
-        isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-      }`}
-    >
-      <span className={`${isScrolled ? 'text-white' : ''}`}>
-        <Image
-          src={Plus}
-          alt="Създай публикация"
-          title='Създай публикация'
-          className={`h-9 w-auto ${isScrolled ? 'white-svg' : ''}`}
-        />
-      </span>
-    </li>
-
-    <button
-      className={`relative flex items-center justify-center rounded-full 
-        ${
-          isScrolled
-            ? isNotificationsOpened
-              ? 'hover:bg-brown focus:bg-brown'
-              : 'hover:bg-transparent focus:bg-transparent'
-            : isNotificationsOpened
-            ? 'hover:bg-black-50 focus:bg-black-50'
-            : 'hover:bg-transparent focus:bg-transparent'
-        }
-      `}
-      
-    >
-      <span className={`${isScrolled ? 'text-white' : ''}`}>
-        <div className="absolute top-[7%] right-[15%] w-2 h-2 bg-red-700 rounded-full"></div>
-        <Image
-          onClick={handleNotifications}
-          src={Notification}
-          alt="Известия"
-          title='Известия'
-          className={`h-9 w-auto ${isScrolled ? 'white-svg' : ''}`}
-        />
-        
-        {isNotificationsOpened && (
-          <ul className="absolute bg-alice-blue shadow-lg rounded-2xl p-1 w-inherit z-[-1] top-[100%] right-0 overflow-hidden">
-            <li
-              className={`px-6 py-2 rounded-2xl ${
-                isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-              }`}
-            >
+      <ul
+        className={`flex justify-between items-stretch text-center cursor-pointer transition-all ${
+          isScrolled ? 'basis-[30%]' : 'basis-[37%]'
+        }`}
+      >
+        {/* Assistant Dropdown */}
+        <li
+          className={`flex transition-all items-center justify-end group p-2 rounded-full relative ${
+            isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
+          }`}
+        >
+          <span className={`z-1 ${isScrolled ? 'text-white' : ''}`}>Асистент</span>
+          <Image
+            src={ChevronDown}
+            alt=" "
+            className={`h-6 w-auto ${isScrolled ? 'white-svg' : ''}`}
+          />
+          <ul className="hidden group-hover:block absolute bg-white shadow-lg rounded-2xl p-1 w-inherit z-[-1] top-[100%] right-0 overflow-hidden">
+            <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
               Проверка
             </li>
-            <li
-              className={`px-6 py-2 rounded-2xl ${
-                isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-              }`}
-            >
+            <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
               Въпрос
             </li>
-            <li
-              className={`px-6 py-2 rounded-2xl ${
-                isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-              }`}
-            >
+            <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
               Обобщаване
             </li>
           </ul>
-        )}
+        </li>
 
+        {/* Forum Button */}
+        <li
+          className={`flex transition-all items-center justify-center rounded-full p-2 ${
+            isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
+          }`}
+        >
+          <span className={`${isScrolled ? 'text-white' : ''}`}>Форум</span>
+        </li>
 
-      </span>
-    </button>
+        {/* Create Post Button */}
+        <li
+          className={`flex transition-all items-center justify-center rounded-full p-1 ${
+            isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
+          }`}
+        >
+          <span className={`${isScrolled ? 'text-white' : ''}`}>
+            <Image
+              src={Plus}
+              alt="Създай публикация"
+              title="Създай публикация"
+              className={`h-9 w-auto ${isScrolled ? 'white-svg' : ''}`}
+            />
+          </span>
+        </li>
 
-    <li
-      className={`flex transition-all items-center justify-end rounded-full ${
-        isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
-      }`}
-    >
-      <span className={`${isScrolled ? 'text-white' : ''}`}>
-        <Image
-          src={UserCircle}
-          alt="Профил"
-          title='Профил'
-          className={`h-9 w-auto ${isScrolled ? 'white-svg' : ''}`}
-        />
-      </span>
-    </li>
-  
-  </ul>
-</nav>
+        {/* Notification Button */}
+        <button
+          id="notification"
+          onClick={(e) => toggleNavBtns(e, 'notification')}
+          className={`relative flex items-center justify-center rounded-full aspect-square ${
+            isScrolled
+              ? state.notification
+                ? 'hover:bg-brown focus:bg-brown'
+                : 'hover:bg-transparent focus:bg-transparent'
+              : state.notification
+              ? 'hover:bg-black-50 focus:bg-black-50'
+              : 'hover:bg-transparent focus:bg-transparent'
+          } ${isScrolled ? 'text-white' : ''}`}
+        >
+          <div className="absolute top-[7%] right-[15%] w-2 h-2 bg-red-700 rounded-full"></div>
+          <Image
+            src={state.notification ? NotificationClicked : Notification}
+            alt="Известия"
+            title="Известия"
+            className={`h-9 w-auto ${isScrolled ? 'white-svg' : ''}`}
+          />
 
+          {state.notification && (
+            <ul className="absolute bg-white shadow-lg rounded-2xl p-1 w-[25vw] h-[65vh] z-[-1] top-[100%] right-0">
+              <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Проверка
+              </li>
+              <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Въпрос
+              </li>
+              <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Обобщаване
+              </li>
+            </ul>
+          )}
+        </button>
+
+        {/* Profile Button */}
+        <button
+          id="profile"
+          onClick={(e) => toggleNavBtns(e, 'profile')}
+          className={`relative flex transition-all items-center justify-end rounded-full p-1 ${
+            isScrolled ? 'text-white hover:bg-brown' : 'hover:bg-black-50'
+          }`}
+        >
+          <Image
+            src={state.profile ? UserCircleClicked : UserCircle}
+            alt="Профил"
+            title="Профил"
+            className={`h-9 w-9 ${isScrolled ? 'white-svg' : ''}`}
+          />
+
+          {state.profile && (
+            <ul className="absolute bg-white shadow-lg rounded-2xl p-1 w-[25vw] h-[65vh] z-[-1] top-[100%] right-0">
+              <li className={`px-6 py-2 rounded-22xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Проверка
+              </li>
+              <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Въпрос
+              </li>
+              <li className={`px-6 py-2 rounded-2xl ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
+                Обобщаване
+              </li>
+            </ul>
+          )}
+        </button>
+      </ul>
+    </nav>
   );
 };
 
