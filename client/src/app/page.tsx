@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import ArrowUp from '@/app/arrow-up.svg';
+import ArrowRight from '@/app/arrow-right.svg';
 
 import '@/app/style.css';
 
@@ -41,7 +41,7 @@ export default function Home() {
             className="h-[100%] aspect-square bg-marian-blue rounded-full flex justify-center items-center cursor-pointer"
             title="Изпращане"
           >
-            <Image src={ArrowUp} alt=" " />
+            <Image src={ArrowRight} alt=" " />
           </button>
         </form>
       </div>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import Image from 'next/image';
+import ArrowRight from '@/app/arrow-right.svg';
 
 export const metadata: Metadata = {
     title: "Qurela - AI Асистент",
@@ -11,16 +13,65 @@ export default function Home() {
       <main className="flex items-center pt-12 min-h-[100vh] items-center">
         <div className="flex w-[80%] h-[80vh] m-auto gap-7 items-stretched">
           <div className="flex-[3] flex gap-6 flex-col justify-stretched">
-            <form className="bg-red-600 h-10 rounded-xl flex-[4]">
-              <input type="text" placeholder="Съобщение до Qurela"></input>
-              <input type="submit"></input>
+            <form className="flex flex-col h-10 rounded-xl flex-[4] bg-white">
+              <textarea placeholder="Съобщение до Qurela" autoFocus className="flex-[8] m-4 outline-none"></textarea>
+              <div className="flex-[2] flex justify-between m-2">
+                <select
+                  className="bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none "
+                >
+                  <option data-type="check" value="Проверка на информация">Проверка</option>
+                  <option data-type="question" value="Задайте въпрос">Въпрос</option>
+                  <option data-type="summarize" value="Обобщи информация">Обобщение</option>
+                </select>
+                <button
+                  className="aspect-square bg-marian-blue rounded-full flex justify-center items-center cursor-pointer"
+                  title="Изпращане"
+                >
+                  <Image src={ArrowRight} alt=" " />
+                </button>
+              </div>
             </form>
 
-            <div className="bg-red-100 h-10 rounded-xl flex-[5]">output</div>
+            <div className="bg-white rounded-xl flex-[5] overflow-hidden flex flex-col">
+              <h3 className="flex-[3] border-l-green-500 border-l-[7px] flex items-center">
+                <span className="mx-2 text-base font-semibold">
+                  Всички ще умрем
+                </span>
+              </h3>
+              <p className="flex-[9] h-max border-l-gray-300 border-l-[7px] flex">
+                <span className="mx-2 my-5 text-sm">
+                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Sint ea molestias, iste laboriosam et magni tempore excepturi. Blanditiis dignissimos unde porro nobis, a accusantium fugiat ratione, natus repudiandae harum dolor.
+                  Reiciendis nemo eius fuga magni deleniti? Corrupti eveniet dolore libero sequi, rerum assumenda laborum porro aspernatur aperiam inventore voluptatibus. Quaerat facere saepe ipsa! Eaque omnis itaque aut numquam natus magnam?
+                </span>
+              </p>
+              <div className="flex-[2] w-full h-[10%] bg-gray-300 flex px-2">Dwonload Save Deleat</div>
+            </div>
           </div>
 
-          <div className="flex-[2] bg-orange-700 rounded-xl items-stretched"> 
-            history
+          <div className="flex-[2] bg-platinum-gray rounded-2xl overflow-hidden"> 
+            <h3 className="w-[100%] bg-jordy-blue px-3 py-2 font-semibold text-base">Последни чатове</h3>
+            <ul className="text-sm m-0 flex flex-col cursor-pointer">
+            <li className="p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-300 m-0 relative">
+              <span>Какви са симптомите на диабет тип 2 и как се диагностицира?</span>
+              <span className="h-full w-[20%] bg-gradient-to-r from-transparent via-platinum-gray to-platinum-gray hover:from-transparent hover:via-gray-300 hover:to-gray-300 absolute top-0 right-0"></span>
+            </li>
+
+              
+              <li className="p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-300 m-0 relative">
+                <span className="">Каква е разликата между вирусна и бактериална инфекция?</span>
+                <span className="h-full w-[20%] bg-gradient-to-r from-transparent via-platinum-gray to-platinum-gray hover:from-transparent hover:via-gray-300 hover:to-gray-300 absolute top-0 right-0"></span>
+              </li>
+              
+              <li className="p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-300 m-0 relative">
+                <span className="">Какви са основните рискови фактори за сърдечно-съдови заболявания?</span>
+                <span className="h-full w-[20%] bg-gradient-to-r from-transparent via-platinum-gray to-platinum-gray hover:from-transparent hover:via-gray-300 hover:to-gray-300 absolute top-0 right-0"></span>
+              </li>
+              
+              <li className="p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-300 m-0 relative">
+                <span className="">Какво е значение на имунната система и какво може да я отслаби?</span>
+                <span className="h-full w-[20%] bg-gradient-to-r from-transparent via-platinum-gray to-platinum-gray hover:from-transparent hover:via-gray-300 hover:to-gray-300 absolute top-0 right-0"></span>
+              </li>
+            </ul>
           </div>
         </div>
       </main>

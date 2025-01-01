@@ -91,7 +91,7 @@ const Navbar: React.FC = () => {
 
   return (
     <nav
-      className={`fixed top-0 w-full flex h-[7vh] items-center justify-between select-none transition-all ${
+      className={`fixed top-0 w-full flex h-[7vh] items-center justify-between select-none transition-all z-[9999] ${
         isScrolled ? 'bg-marian-blue p-[2%]' : 'p-[3%]'
       }`}
     >
@@ -101,17 +101,18 @@ const Navbar: React.FC = () => {
 
       <ul
         className={`flex justify-between items-center text-center cursor-pointer transition-all ${
-          isScrolled ? 'basis-[30%]' : 'basis-[37%]'
+          isScrolled ? 'basis-[30%]' : 'basis-[35%]'
         }`}
       >
         {/* Assistant Dropdown */}
-        <li
-          className={`flex transition-all items-center justify-end group p-1 rounded-full relative ${
+        <Link
+          href='/assistant'
+          className={`flex transition-all items-center justify-end group p-[1vh] text-sm rounded-full relative ${
             isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
           }`}
         >
           <span className={`z-1 ${isScrolled ? 'text-white' : ''}`}>
-            <Link href='/assistant'>Асистент</Link>
+            <>Асистент</>
           </span>
 
           <Image
@@ -130,11 +131,11 @@ const Navbar: React.FC = () => {
               Обобщаване
             </li>
           </ul>
-        </li>
+        </Link>
 
         {/* Forum Button */}
         <li
-          className={`flex transition-all items-center justify-center rounded-full p-1 ${
+          className={`flex transition-all items-center justify-center rounded-full p-[1vh] text-sm ${
             isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
           }`}
         >
@@ -145,7 +146,7 @@ const Navbar: React.FC = () => {
 
         {/* Create Post Button */}
         <li
-          className={`flex transition-all items-center justify-center rounded-full p-1 ${
+          className={`flex transition-all items-center justify-center rounded-full p-[1.5px] ${
             isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'
           }`}
         >
@@ -154,7 +155,7 @@ const Navbar: React.FC = () => {
               src={Plus}
               alt="Създай публикация"
               title="Създай публикация"
-              className={`h-7 w-auto ${isScrolled ? 'white-svg' : ''}`}
+              className={`h-6 w-auto ${isScrolled ? 'white-svg' : ''}`}
             />
           </span>
         </li>
@@ -182,7 +183,7 @@ const Navbar: React.FC = () => {
           />
 
           {state.notification && (
-            <ul className={`absolute bg-white shadow-lg rounded-2xl p-1 w-[25vw] h-[65vh] z-10 right-0 ${ isScrolled? 'top-[140%]' : 'top-[100%]'}`}>
+            <ul className={`absolute bg-white shadow-lg rounded-2xl p-1 w-[340px] h-[400px] z-10 right-0 ${ isScrolled? 'top-[140%]' : 'top-[100%]'}`}>
               <li className={`px-6 py-2 rounded-2xl text-sm ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
                 Нов последовател
               </li>
@@ -216,7 +217,7 @@ const Navbar: React.FC = () => {
           />
 
           {state.profile && (
-            <ul className={`absolute bg-white shadow-lg rounded-2xl p-1 w-[25vw] h-[65vh] z-10 right-0 ${ isScrolled? 'top-[120%]' : 'top-[100%]'}`}>
+            <ul className={`absolute bg-white shadow-lg rounded-2xl p-1  w-[240px] h-[300px] z-10 right-0 ${ isScrolled? 'top-[120%]' : 'top-[100%]'}`}>
               <li className={`px-3 py-2 rounded-2xl text-sm ${isScrolled ? 'hover:bg-brown' : 'hover:bg-black-50'}`}>
                 Моят профил
               </li>

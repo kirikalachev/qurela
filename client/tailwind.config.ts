@@ -18,7 +18,7 @@ export default {
         "marian-blue": "#00398F",
         "rich-black": "#000814",
         "platinum-gray": "#E7E7E7",
-        "brown": "#AA3300",
+        "brown": "#DE9151",
         'black-50': 'rgba(0, 0, 0, 0.1)'
       },
 
