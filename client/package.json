@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "docxtemplater": "^3.55.9",
     "next": "15.1.0",
+    "pizzip": "^3.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

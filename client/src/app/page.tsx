@@ -12,8 +12,8 @@ export default function Home() {
   };
 
   const redirectToAssistant = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); // Prevent form submission
-    window.location.href = '/assistant'; // Redirect manually using window.location
+    event.preventDefault(); 
+    window.location.href = '/assistant'; 
   };
 
   return (
