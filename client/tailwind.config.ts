@@ -8,6 +8,15 @@ export default {
   ],
   theme: {
     extend: {
+      // screens: {
+      //   'name-idea': '600px',
+      //   // => @media (min-width: 640px) { ... }
+  
+      //   'name-idea2': '1000px',
+      //   // => @media (min-width: 1024px) { ... }
+  
+      // },
+
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
@@ -19,7 +28,8 @@ export default {
         "rich-black": "#000814",
         "platinum-gray": "#E7E7E7",
         "brown": "#DE9151",
-        'black-50': 'rgba(0, 0, 0, 0.1)'
+        'black-50': 'rgba(0, 0, 0, 0.1)',
+        "Anti-flash-white": "#F0F0F0"
       },
 
       borderRadius: {

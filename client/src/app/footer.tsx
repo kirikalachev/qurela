@@ -1,7 +1,7 @@
 export default function Footer() {
     return (
       <footer className='bg-rich-black mt-5 border-t-[5px] border-marian-blue'>
-          <div className='flex items-top py-[3%] px-[5%]'>
+          <div className='flex items-top py-[3%] px-[5%] flex-wrap'>
             <div className='flex-1'>
               <h2 className='text-2xl font-semibold'>Qurela</h2>
               <p className='w-[70%]'>
