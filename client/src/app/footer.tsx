@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Footer() {
     return (
       <footer className='bg-rich-black mt-5 border-t-[5px] border-marian-blue'>
@@ -12,18 +14,19 @@ export default function Footer() {
             <div className='flex-1'>
               <h2 className='uppercase font-semibold text-lg'>информация</h2>
               <ul>
-                <li>Начало</li>
+                <li><Link href='/'>Начало</Link></li>
                 <li>За нас</li>
                 <li>Функционалности</li>
-                <li>Общностен форум</li>
-                <li>Регистрация / Вход</li>
+                <li>Често задавани въпроси</li>
               </ul>
             </div>
   
             <div className='flex-1'>
               <h2 className='uppercase font-semibold text-lg'>ресурси</h2>
               <ul>
-                <li>Често задавани въпроси</li>
+              <li>
+                  <Link href='/auth'>Регистрация / Вход</Link>
+                </li>
                 <li>Политика за поверителност</li>
                 <li>Условия на ползване</li>
               </ul>
