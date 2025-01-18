@@ -1,5 +1,4 @@
 'use client';
-import type { Metadata } from "next";
 
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
