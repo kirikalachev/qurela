@@ -10,7 +10,7 @@ const FormPopup: React.FC = () => {
   return (
     <main className='h-[100vh] overflow-hidden'>
       {/* <Image src={StudyIMG} alt='' className='w-full h-auto'></Image> */}
-      <div className='absolute w-full h-full bg-red-500'>
+      <div className='absolute w-full h-full bg-rich-black'>
         <video 
           className='object-cover h-full w-full'
           autoPlay
@@ -42,7 +42,7 @@ const FormPopup: React.FC = () => {
             </div>
             <div className="w-full lg:w-1/2 p-6">
               <h2 className="text-2xl font-semibold text-center">
-                {isLogin ? 'LOGIN' : 'SIGNUP'}
+                {isLogin ? 'ВЛИЗАНЕ' : 'РЕГИСТРАЦИЯ'}
               </h2>
               <form className="mt-6">
                 <div className="mb-4">
