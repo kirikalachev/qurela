@@ -1,0 +1,40 @@
+# Python bytecode and compiled files
+*.pyc
+*.pyo
+__pycache__/
+
+# Django specific
+db.sqlite3
+*.log
+media/
+staticfiles/
+
+# Environment variables
+.env
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Migrations
+*/migrations/__pycache__/
+*/migrations/*.pyc
+*/migrations/*.pyo
+*/migrations/*.log
+*/migrations/*.tmp
+*/migrations/*.bak
+*/migrations/*.swp
+*/migrations/*.swo
+*/migrations/00*.py

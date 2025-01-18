@@ -1,0 +1,21 @@
+{% load static %}
+<head>
+    <link rel="stylesheet" href="{% static 'test.css' %}">
+</head>
+<body>
+    <p>assistant</p>
+
+    {% if intent == "search" %}
+        <h2>Document Search Result:</h2>
+        <p>Best match: {{ best_match }}</p>
+        <p>Similarity score: {{ similarity }}</p>
+    {% elif intent == "summarize" %}
+        <h2>Document Summary:</h2>
+        <p>{{ summary }}</p>
+    {% endif %}
+
+    <form method = "post">
+    {% csrf_token %}
+        <input type="text" id="request" name="request" Require>
+    </form>
+</body>
