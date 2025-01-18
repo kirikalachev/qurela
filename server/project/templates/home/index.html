@@ -1,0 +1,17 @@
+{% load static %}
+<head>
+    <link rel="stylesheet" href="{% static 'test.css' %}">
+</head>
+<body>
+    <p>hello world</p>
+
+    {% for message in messages %}
+        <strong role="alert">Съобщение:</strong> {{ message }}
+        {% endfor %}
+
+        
+        <h3>Welcome!</h3>
+
+        <button type="submit"> <a href="/signup">SignUp</a> </button>
+        <button type="submit"> <a href="/signin">SignIn</a> </button>
+</body>
