@@ -15,9 +15,9 @@ export default function Footer() {
               <h2 className='uppercase font-semibold text-lg'>информация</h2>
               <ul>
               <li><Link href='/'>Начало</Link></li>
-              <li><Link href='/about'>За нас</Link></li>
-              <li><Link href='/features'>Функционалности</Link></li>
-              <li><Link href='/faq'>Често задавани въпроси</Link></li>
+              <li><Link href='/info#about-us'>За нас</Link></li>
+              <li><Link href='/info#features'>Функционалности</Link></li>
+              <li><Link href='/info#faq'>Често задавани въпроси</Link></li>
 c
               </ul>
             </div>

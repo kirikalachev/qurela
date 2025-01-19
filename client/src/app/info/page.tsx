@@ -2,7 +2,7 @@
 
 export default function Info() {
     return (
-        <main>
+        <main className="flex items-center pt-[5%] min-h-[100vh] items-center flex-col">
             <section id="about-us">
                 <h2>За нас</h2>
                 <p>
