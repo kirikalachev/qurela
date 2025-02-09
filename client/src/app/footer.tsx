@@ -15,10 +15,9 @@ export default function Footer() {
               <h2 className='uppercase font-semibold text-lg'>информация</h2>
               <ul>
               <li><Link href='/'>Начало</Link></li>
-              <li><Link href='/info#about-us'>За нас</Link></li>
+              <li><Link href='/info#about'>За сайта</Link></li>
               <li><Link href='/info#features'>Функционалности</Link></li>
               <li><Link href='/info#faq'>Често задавани въпроси</Link></li>
-c
               </ul>
             </div>
   
@@ -28,8 +27,12 @@ c
               <li>
                   <Link href='/auth'>Регистрация / Вход</Link>
                 </li>
-                <li>Политика за поверителност</li>
-                <li>Условия на ползване</li>
+                <li>
+                <Link href='/resources#privacy-policy'>Политика за поверителност</Link>
+                </li>
+                <li>
+                <Link href='/resources#terms-of-use'>Условия на ползване</Link>
+                </li>
               </ul>
             </div>
   
