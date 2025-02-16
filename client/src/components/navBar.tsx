@@ -3,7 +3,6 @@
 import { useReducer, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import axios from "axios";
 
@@ -50,14 +49,18 @@ const toggleReducer = (state: ToggleState, action: ToggleAction): ToggleState =>
 };
 
 const Navbar: React.FC = () => {
+  const [mobileNav, setMobileNav] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [state, dispatch] = useReducer(toggleReducer, initialState);
   const [toggleNavContentOpened, setToggleNavContentOpened] = useState(false);
-  const [isLogged, setIsLogged] = useState(false); // Проверка дали потребителя е логнат
-  const router = useRouter();
+  const [isLogged, setIsLogged] = useState(false); // Detect if the user is logged in
+
+  function toggleMobileNav() {
+    setMobileNav(!mobileNav);
+  }
 
   useEffect(() => {
-    // Проверка за токен (в Cookies или localStorage)
+    // Check if token exists (in either cookies or localStorage)
     const token = Cookies.get("token") || localStorage.getItem("token");
     setIsLogged(!!token);
   }, []);
@@ -77,16 +80,17 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const toggleKeys = Object.keys(initialState);
-      let clickedInside = false;
-      toggleKeys.forEach(key => {
-        const elements = document.querySelectorAll(`[id="${key}"]`);
-        elements.forEach(el => {
-          if (el.contains(event.target as Node)) {
-            clickedInside = true;
-          }
-        });
-      });
+      const notificationDesktop = document.getElementById("notification-desktop");
+      const profileDesktop = document.getElementById("profile-desktop");
+      const notificationMobile = document.getElementById("notification-mobile");
+      const profileMobile = document.getElementById("profile-mobile");
+
+      const clickedInside =
+        (notificationDesktop && notificationDesktop.contains(event.target as Node)) ||
+        (profileDesktop && profileDesktop.contains(event.target as Node)) ||
+        (notificationMobile && notificationMobile.contains(event.target as Node)) ||
+        (profileMobile && profileMobile.contains(event.target as Node));
+
       if (!clickedInside) {
         dispatch({ type: "CLOSE" });
       }
@@ -96,17 +100,14 @@ const Navbar: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Функция за превключване на dropdown-а (известия, профил и т.н.)
-  const toggleNavBtns = (
-    e: React.MouseEvent,
-    key: "notification" | "profile" | "messages" | "settings"
-  ) => {
+  // Toggle notification or profile dropdown
+  const toggleNavBtns = (e: React.MouseEvent, key: "notification" | "profile") => {
     dispatch({ type: "TOGGLE", payload: key });
   };
 
   const signOut = async () => {
     try {
-      const token = Cookies.get("token"); // Взимаме токена от cookies
+      const token = Cookies.get("token"); // Get token from cookies
 
       if (!token) {
         console.warn("No token found, redirecting to login...");
@@ -116,22 +117,22 @@ const Navbar: React.FC = () => {
 
       const response = await axios.post(
         "http://127.0.0.1:8000/api/signout/",
-        {}, // Празен обект
+        {}, // Send an empty object
         {
-          withCredentials: true, // Изпращаме cookies
+          withCredentials: true, // Ensures cookies are sent
           headers: {
-            Authorization: `Bearer ${token}`, // Прикачваме токена
+            Authorization: `Bearer ${token}`, // Attach token
           },
         }
       );
 
-      console.log(response.data.message); // Debug
+      console.log(response.data.message); // Debug message
 
-      // Премахваме токена
+      // Remove authentication token from local storage and cookies
       localStorage.removeItem("token");
       Cookies.remove("token");
 
-      // Пренасочване към login
+      // Redirect to login
       window.location.href = "/auth/signin";
     } catch (error: any) {
       console.error("Logout failed:", error.response?.data?.message || error.message);
@@ -141,239 +142,146 @@ const Navbar: React.FC = () => {
   return (
     <>
       {/* Desktop Navbar */}
-      <nav
-        className={`select-none hidden md:flex fixed top-0 w-full h-[20px] items-center justify-between transition-all z-[50] ${
-          isScrolled ? "bg-marian-blue p-[25px]" : "p-[45px]"
-        }`}
-      >
+      <nav className={`hidden md:flex fixed top-0 w-full h-[20px] items-center justify-between transition-all z-[50] ${isScrolled ? "bg-marian-blue p-[25px]" : "p-[45px]"}`}>
         <h1 className={`text-4xl font-bold cursor-pointer ${isScrolled ? "text-white" : ""}`}>
           <Link href="/dashboard">Qurela</Link>
         </h1>
 
         {isLogged ? (
-          // Навигация за логнат потребител
-          <ul
-            className={`flex justify-between items-center text-center cursor-pointer transition-all ${
-              isScrolled ? "basis-[300px]" : "basis-[350px]"
-            }`}
-          >
-            {/* Assistant Dropdown */}
-            <Link
-              href="/assistant"
-              className={`flex transition-all items-center justify-end group p-[1vh] text-sm rounded-full relative ${
-                isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-              }`}
-            >
-              <span className={`z-1 ${isScrolled ? "text-white" : ""}`}>
-                <>Асистент</>
-              </span>
-
-              <Image
-                src={ChevronDown}
-                alt=" "
-                className={`h-4 w-auto ${isScrolled ? "white-svg" : ""}`}
-              />
-              <ul className="hidden group-hover:block absolute bg-white shadow-lg rounded-2xl p-1 w-inherit z-15 top-[100%] right-0 overflow-hidden">
-                <li
-                  className={`px-3 py-2 text-sm rounded-2xl ${
-                    isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                  }`}
-                >
-                  Проверка
-                </li>
-                <li
-                  className={`px-3 py-2 text-sm rounded-2xl ${
-                    isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                  }`}
-                >
-                  Въпрос
-                </li>
-                <li
-                  className={`px-3 py-2 text-sm rounded-2xl ${
-                    isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                  }`}
-                >
-                  Обобщаване
-                </li>
-              </ul>
+          // Logged-in user navigation
+          <ul className="flex justify-between items-center text-center">
+            <Link href="/assistant" className="p-2 text-sm">Асистент</Link>
+            <Link href="/forum" className="p-2 text-sm">Форум</Link>
+            <Link href="/create-post">
+              <Image src={Plus} alt="Създай публикация" className="h-6 w-auto" />
             </Link>
 
-            {/* Forum Button */}
-            <li
-              className={`flex transition-all items-center justify-center rounded-full p-[1vh] text-sm ${
-                isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-              }`}
-            >
-              <span className={`${isScrolled ? "text-white" : ""}`}>
-                <Link href="/forum">Форум</Link>
-              </span>
-            </li>
-
-            {/* Create Post Button */}
-            <li
-              className={`flex transition-all items-center justify-center rounded-full p-[1.5px] ${
-                isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-              }`}
-            >
-              <span className={`${isScrolled ? "text-white" : ""}`}>
-                <Image
-                  src={Plus}
-                  alt="Създай публикация"
-                  title="Създай публикация"
-                  className={`h-6 w-auto ${isScrolled ? "white-svg" : ""}`}
-                />
-              </span>
-            </li>
-
-            {/* Notification Button */}
-            <button
-              id="notification"
-              onClick={(e) => toggleNavBtns(e, "notification")}
-              className={`relative flex items-center justify-center rounded-full aspect-square ${
-                isScrolled
-                  ? state.notification
-                    ? ""
-                    : "hover:bg-transparent focus:bg-transparent"
-                  : state.notification
-                  ? "hover:bg-black-50 focus:bg-black-50"
-                  : "hover:bg-transparent focus:bg-transparent"
-              } ${isScrolled ? "text-white" : ""}`}
-            >
-              <div className="absolute top-[7%] right-[15%] w-2 h-2 bg-red-700 rounded-full z-[100]"></div>
-              <Image
-                src={state.notification ? NotificationClicked : Notification}
-                alt="Известия"
-                title="Известия"
-                className={`h-7 w-auto ${isScrolled ? "white-svg" : ""}`}
-              />
-
-              {state.notification && (
-                <div
-                  className={`absolute bg-white shadow-lg rounded-2xl p-1 w-[340px] h-[400px] z-10 right-0 ${
-                    isScrolled ? "top-[140%]" : "top-[100%]"
-                  }`}
-                >
-                  <li
-                    className={`px-6 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                    Нов последовател
-                  </li>
-                  <li
-                    className={`px-6 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                    +1 лайк
-                  </li>
-                </div>
-              )}
+            {/* Notifications */}
+            <button id="notification-desktop" onClick={(e) => toggleNavBtns(e, "notification")}>
+              <Image src={state.notification ? NotificationClicked : Notification} alt="Известия" className="h-7 w-auto" />
             </button>
 
-            {/* Profile Button */}
-            <button
-              id="profile"
-              onClick={(e) => toggleNavBtns(e, "profile")}
-              className={`relative flex items-center justify-center rounded-full aspect-square ${
-                isScrolled
-                  ? state.profile
-                    ? ""
-                    : "hover:bg-transparent focus:bg-transparent"
-                  : state.profile
-                  ? "hover:bg-black-50 focus:bg-black-50"
-                  : "hover:bg-transparent focus:bg-transparent"
-              } ${isScrolled ? "text-white" : ""}`}
-            >
-              <Image
-                src={state.profile ? UserCircleClicked : UserCircle}
-                alt="Профил"
-                title="Профил"
-                className={`h-9 w-auto ${isScrolled ? "white-svg" : ""}`}
-              />
-
+            {/* Profile */}
+            <button id="profile-desktop" onClick={(e) => toggleNavBtns(e, "profile")}>
+              <Image src={state.profile ? UserCircleClicked : UserCircle} alt="Профил" className="h-9 w-auto" />
               {state.profile && (
-                <div
-                  className={`absolute bg-white shadow-lg rounded-2xl p-1 w-[240px] h-[300px] z-10 right-0 flex flex-col ${
-                    isScrolled ? "top-[120%]" : "top-[100%]"
-                  }`}
-                >
-                  <Link href='/profile'
-                    className={`px-3 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                    Моят профил
-                  </Link>
-                  <div
-                    className={`px-3 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                    Тъмна/Светла режим
-                  </div>
-                  <Link href='/settings'
-                    className={`px-3 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                    Настройки
-                  </Link>
-                  <input type='button' onClick={signOut}
-                          value="Излизане"
-                    className={`px-3 py-2 rounded-2xl text-sm ${
-                      isScrolled ? "hover:bg-brown" : "hover:bg-black-50"
-                    }`}
-                  >
-                  </input>
-                </div>
+                <ul className="absolute bg-white shadow-lg rounded-2xl p-1 w-[240px] h-[300px] z-10 right-0 top-[100%]">
+                  <Link href="/profile" className="px-3 py-2 text-sm hover:bg-black-50">Моят профил</Link>
+                  <li className="px-3 py-2 text-sm hover:bg-black-50">Настройки</li>
+                  <li onClick={signOut} className="px-3 py-2 text-sm hover:bg-black-50">Излизане</li>
+                </ul>
               )}
             </button>
           </ul>
         ) : (
-          // Навигация за гост потребител
-          <ul 
-          className={`flex justify-between items-center text-center cursor-pointer transition-all ${
-            isScrolled ? "basis-[420px] text-white" : "basis-[450px]"
-          }`}
-          >
-            <Link href="/info" className="p-2">
-              За сайта
-            </Link>
-            <Link href="/info#instructions" className="p-2">
-              Инструкции
-            </Link>
-            <Link href="/info#faq" className="p-2">
-              ЧЗВ
-            </Link>
-            <Link href="/auth/signin" className={`p-2 text-brandeis-blue ${isScrolled ? "text-white" : ""}`}>
-              Вход
-            </Link>
-            <Link href="/auth/signup" className="bg-brandeis-blue text-white py-1 px-3 rounded-xl">
-              Регистрация
-            </Link>
+          // Guest navigation
+          <ul className="flex items-center">
+            <Link href="/about" className="p-2">За сайта</Link>
+            <Link href="/instructions" className="p-2">Инструкции</Link>
+            <Link href="/faq" className="p-2">ЧЗВ</Link>
+            <Link href="/auth/signin" className="p-2">Вход</Link>
+            <Link href="/auth/signup" className="bg-brandeis-blue text-white py-1 px-3 rounded-xl">Регистрация</Link>
           </ul>
         )}
       </nav>
 
       {/* Mobile Navbar */}
-      <nav className="md:hidden flex fixed top-0 w-full items-center justify-between p-3 bg-marian-blue z-[9999]">
-        <button onClick={toggleNavContent}>
-          <Image src={Menu} alt="Меню" className="h-7 w-auto" />
-        </button>
-        <h1 className="text-4xl font-bold cursor-pointer text-white">
-          <Link href="/dashboard">Qurela</Link>
-        </h1>
-        {isLogged ? (
-          <button onClick={signOut} className="text-white">
-            Изход
-          </button>
-        ) : (
-          <Link href="/auth/signin" className="text-white">
-            Вход
+      <nav className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between p-3 bg-marian-blue shadow-lg z-50">
+  <button onClick={toggleMobileNav} className="p-1">
+    <Image src={Menu} alt="Меню" className="h-7 w-auto" />
+  </button>
+  <h1 className="text-3xl font-semibold text-white">
+    <Link href="/dashboard">Qurela</Link>
+  </h1>
+  {isLogged ? (
+    <button
+      id="profile"
+      onClick={(e) => toggleNavBtns(e, "profile")}
+      className="relative flex items-center justify-center rounded-full hover:bg-black/20 text-white p-1"
+    >
+      <Image
+        src={state.profile ? UserCircleClicked : UserCircle}
+        alt="Профил"
+        title="Профил"
+        className="h-8 w-auto"
+      />
+
+      {state.profile && (
+        <div className="absolute bg-white shadow-lg rounded-lg p-2 w-60 h-72 z-10 right-0 top-full mt-2 flex flex-col">
+          <Link
+            href="/profile"
+            className="px-3 py-2 rounded-md text-sm hover:bg-safety-orange transition-colors"
+          >
+            Моят профил
           </Link>
-        )}
-      </nav>
+          <div
+            className="px-3 py-2 rounded-md text-sm hover:bg-safety-orange transition-colors cursor-pointer"
+          >
+            Тъмна/Светла режим
+          </div>
+          <Link
+            href="/settings"
+            className="px-3 py-2 rounded-md text-sm hover:bg-safety-orange transition-colors"
+          >
+            Настройки
+          </Link>
+          <input
+            type="button"
+            onClick={signOut}
+            value="Излизане"
+            className="px-3 py-2 rounded-md text-sm hover:bg-black/20 transition-colors"
+          />
+        </div>
+      )}
+    </button>
+  ) : (
+    <Link href="/auth/signin" className="text-white text-sm">
+      Вход
+    </Link>
+  )}
+
+  {/* Мобилен менют */}
+
+  <div
+  className={`h-full py-10 px-4 bg-marian-blue fixed top-14 left-0 w-full flex flex-col items-center justify-between overflow-hidden transition-all duration-300 ${
+    mobileNav ? "max-h-full opacity-100 scale-100" : "max-h-0 opacity-0 scale-95"
+  }`}
+>
+    {/* Първи списък - по-видим и с модерен дизайн */}
+    <ul className="w-full select-none bg-white rounded-lg shadow-md mb-2 text-base">
+      <li className="py-2 text-center border-b border-gray-200 hover:bg-gray-100 transition-colors" onClick={toggleMobileNav} >
+        <Link href='/assistant'>Асистент</Link>
+      </li>
+      <li className="py-2 text-center border-b border-gray-200 hover:bg-gray-100 transition-colors" onClick={toggleMobileNav} >
+        <Link href='/forum'>Форум</Link>
+      </li>
+      <li className="py-2 text-center hover:bg-gray-100 transition-colors" onClick={toggleMobileNav} >
+        Създай публикация
+      </li>
+    </ul>
+
+    {/* Втори списък - по-малко акцент */}
+    <ul className="w-full flex flex-col items-start text-sm text-gray-600 cursor-pointer ">
+  <li className="py-1 text-center" onClick={toggleMobileNav} >
+    <Link href="/info#about-us">За сайта</Link>
+  </li>
+  <li className="py-1 text-center" onClick={toggleMobileNav} >
+    <Link href="/info#features">Инструкции</Link>
+  </li>
+  <li className="py-1 text-center" onClick={toggleMobileNav} >
+    <Link href="/info#faq">ЧЗВ</Link>
+  </li>
+  <li className="py-1 text-center" onClick={toggleMobileNav} >
+    <Link href="/resources#privacy-policy">Политика за поверителност</Link>
+  </li>
+  <li className="py-1 text-center" onClick={toggleMobileNav} >
+    <Link href="/resources#terms-of-use">Условия на ползване</Link>
+  </li>
+</ul>
+  </div>
+
+  </nav>
+
     </>
   );
 };

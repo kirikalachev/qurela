@@ -38,7 +38,7 @@ const SignIn: React.FC = () => {
     <main className="h-[100vh] overflow-hidden">
       <div className="absolute w-full h-full bg-rich-black">
         <video className="object-cover h-full w-full" autoPlay muted loop>
-          <source src="/background.mp4" type="video/mp4" />
+          <source src="background.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>

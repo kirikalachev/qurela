@@ -1,109 +1,104 @@
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
 from django.contrib.auth.models import User
-from django.contrib import messages
+from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
-from project import settings
-from django.contrib.sites.shortcuts import get_current_site
-from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.utils.encoding import force_bytes, force_str
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 import random
+from django.contrib.auth import get_user_model
 
-username_errors = {
-    "already_exists":"Потребителското име вече съществува!",
-    "too_long": "Потребителското име трябва да е под 15 знака!",
-    "not_isalnum": "Потребителското име може да съдържа само букви и числа!",
-}
-password_errors = {
-    "too_long": "Паролата трябва да е под 15 знака!",
-    "isalnum": "Паролата трябва да съдържа поне по една буква, число и символ!",
-}
+# Generate JWT tokens
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token)
+    }
 
+
+User = get_user_model()
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def signup(request):
-    if request.method == "POST":
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
 
-        errors = []
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already taken'}, status=400)
+    if User.objects.filter(email=email).exists():
+        return Response({'error': 'Email already registered'}, status=400)
 
-        if User.objects.filter(username=username).exists():
-            errors.append(username_errors["already_exists"])
-        if len(username) > 15:
-            errors.append(username_errors["too_long"])
-        if not username.isalnum():
-            errors.append(username_errors["not_isalnum"])
-        if len(password) > 15:
-            errors.append(password_errors["too_long"])
-        if password.isalnum():
-            errors.append(password_errors["isalnum"])
+    verification_code = random.randint(1000, 9999)
 
-        capcha = random.randint(1000, 9999)
+    user = User.objects.create_user(username=username, email=email, password=password, is_active=False)
+    user.email_verification_code = verification_code
+    user.save()
 
-        if errors:
-            for error in errors:
-                messages.error(request, error)
-        else:
-            send_mail(
-                'Потвърждаване на имейл!',
-                f'Моля напишете кратката капча представена отдолу за да завършите регистрацията си! {capcha}',
-                settings.EMAIL_HOST_USER,
-                [email],
-                fail_silently=False
-            )
-            request.session['capcha'] = capcha
-            request.session['username'] = username
-            request.session['email'] = email
-            request.session['password'] = password
+    send_mail(
+        'Verify your email',
+        f'Your verification code is {verification_code}',
+        settings.EMAIL_HOST_USER,
+        [email]
+    )
 
-            return redirect('confirm')
+    return Response({'message': 'User registered. Check email for verification code.'})
 
-    return render(request, "authentication/signup.html")
 
-def confirm(request):
-    if request.method == "POST":
-        capchatest = request.POST.get('capchatest')
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_email(request):
+    email = request.data.get('email')
+    code = request.data.get('code')
+    
+    stored_code = request.session.get('verification_code')  # Get from session
+    if not stored_code:
+        return Response({'error': 'Verification code expired or not found'}, status=400)
 
-        capcha = request.session.get('capcha')
-        username = request.session.get('username')
-        email = request.session.get('email')
-        password = request.session.get('password')
+    if str(code) != str(stored_code):
+        return Response({'error': 'Invalid verification code'}, status=400)
 
-        if capchatest == str(capcha):
-            myuser = User.objects.create_user(username, email, password)
-            myuser.is_active = True
-            myuser.save()
-            return redirect('signin')
+    try:
+        user = User.objects.get(email=email)
+        user.is_active = True
+        user.save()
+        del request.session['verification_code']  # Remove code after success
+        return Response({'message': 'Email verified successfully'})
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
 
-    return render(request, "authentication/signup.html")
 
-def signin(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
 
-        user = authenticate(username=username, password=password)
-
-        if user is not None:
-            login(request, user)
-            return redirect('account')  # redirect to account view instead of rendering the template directly
-
-        else:
-            messages.error(request, "Невалидно потребителско име или парола.")
-            return render(request, "authentication/signin.html")
-        
-    return render(request, "authentication/signin.html")
-
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def signout(request):
-    logout(request)
-    messages.success(request, "Излязохте от профила си успешно!")
-    return render(request, "home/index.html")
+    response = Response({"message": "Logged out successfully"}, status=200)
+    
+    # Remove authentication token
+    response.delete_cookie("token")  # Deletes the JWT cookie (if stored in cookies)
+    request.auth = None  # Clears DRF authentication session
+    
+    return response
 
-@login_required  # Ensure the user is logged in to access this view
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def account(request):
     user = request.user
-    return render(request, "authentication/account.html", {'username': user.username, 'email': user.email})
+    return Response({'username': user.username, 'email': user.email})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def signin(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(username=username, password=password)
+
+    if user is not None:
+        tokens = get_tokens_for_user(user)
+        return Response({'message': 'Login successful', 'tokens': tokens})
+    return Response({'error': 'Invalid credentials'}, status=400)
+
