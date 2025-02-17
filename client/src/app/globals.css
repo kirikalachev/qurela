@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+.popup {
+  opacity: 0;
+}
+
+.popup.show {
+  opacity: 1;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px; /* Width */
 }

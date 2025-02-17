@@ -27,11 +27,11 @@ export default {
         "marian-blue": "#00398F",
         "rich-black": "#000814",
         "platinum-gray": "#E7E7E7",
-        "brown": "#DE9151",
+        // "brown": "#DE9151",
         'black-50': 'rgba(0, 0, 0, 0.1)',
-        "Anti-flash-white": "#F0F0F0"
+        "Anti-flash-white": "#F0F0F0",
+        "safety-orange": "#FA7601"
       },
-
       borderRadius: {
         "basic-round": "15px",
         "more-rounded": "25px"

@@ -3,11 +3,25 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
-import api from '@/lib/api'; // Import the Axios instance
-
+import api from '@/lib/api'; 
+import Link from "next/link";
 import '@/app/style.css';
+import PopupNotification from "../../components/popupNottification";
+
+interface ProfileData {
+  username: string;
+}
 
 export default function Dashboard() {
+  const [showPopup, setShowPopup] = useState(false);
+
+  useEffect(() => {
+    const popupShowed = localStorage.getItem("popupShowed");
+    if (!popupShowed) {
+      setShowPopup(true);
+    }
+  }, []);
+
   const [inputValue, setInputValue] = useState('Проверка на информация');
   const [protectedData, setProtectedData] = useState<any>(null);
   
@@ -23,6 +37,7 @@ export default function Dashboard() {
 
   return (
     <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center">
+            {showPopup && <PopupNotification />}
       <h2 className="text-2xl md:text-3xl font-bold">{inputValue}</h2>
       <div className="flex justify-center items-center flex-col w-full">
         <form
@@ -83,38 +98,32 @@ export default function Dashboard() {
       <h2 className="text-2xl md:text-3xl font-bold self-start mx-[5%] md:self-center md:mx-[0] mt-[5%]">
         Трендинг
       </h2>
-      <div className="bg-white flex justify-between md:justify-center items-center w-[90%] md:w-[65%] m-[1vh] rounded-2xl md:flex-nowrap flex-wrap">
-        <div className="w-full bg-Anti-flash-white rounded-xl p-2">
-          <div className="w-full flex justify-between">
-            <div className="flex align-center">
-              <div>
-                <img
-                  src="https://picsum.photos/200"
-                  alt="Random Image"
-                  className="h-10 aspect-square rounded-full"
-                />
-              </div>
-              <div>
-                <h3>Ivan Ivanov</h3>
-                <p>3years ago</p>
-              </div>
-            </div>
-            <div>menu</div>
-          </div>
-          <div>
-            <h3>Lorem ipsum lorem</h3>
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex, quaerat perferendis. Nobis, neque harum. Blanditiis, velit sequi! Ullam velit odio laborum, cupiditate quae, asperiores, excepturi necessitatibus voluptatum quis aspernatur eum.
-            </p>
-          </div>
-          <div className="flex justify-between items-center p-2">
-            <div className="flex justify-between gap-x-2">
-              <div>Like</div>
-              <div>Comment</div>
-              <div>Share</div>
-            </div>
-            <div>Topic</div>
-          </div>
+      <div className='flex w-full justify-center'>
+        <div className="min-h-12 w-[70%] bg-white p-4 rounded-xl shadow-md">
+                      {/* Профилна информация */}
+                      <div className="flex items-center gap-4 mb-4">
+                          <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
+                          <div>
+                              <h4 className="font-bold">Име</h4>
+                              <p className="text-gray-500 text-sm">Дата на качване</p>
+                          </div>
+                      </div>
+
+                      {/* Съдържание на поста */}
+                      <div className="mb-4">
+                          <h3 className="font-semibold text-lg">Заглавие на поста</h3>
+                          <p className="text-gray-700">Съдържание на поста
+                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatibus eius in, ratione distinctio, deserunt facere sint facilis delectus esse sit obcaecati at! Tempore doloribus aspernatur maxime? Molestiae voluptatum ad dolorum?
+                          </p>
+                      </div>
+
+                      {/* Интеракция */}
+                      <div className="flex gap-4 text-sm">
+                          <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
+                          <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
+                          <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
+                          <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
+                      </div>
         </div>
       </div>
     </main>
