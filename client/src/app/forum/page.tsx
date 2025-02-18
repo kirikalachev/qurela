@@ -1,5 +1,6 @@
 'use client';
 import Link from "next/link";
+import CreatePost from "../../components/createPost/createPost";
 
 export default function Home() {
     return (
@@ -178,6 +179,7 @@ export default function Home() {
                     ))}
                 </ul>
             </div>
+            <CreatePost />
         </div>
     );
 }
