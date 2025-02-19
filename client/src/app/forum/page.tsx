@@ -1,8 +1,12 @@
 'use client';
 import Link from "next/link";
+import { useState } from "react";
 import CreatePost from "../../components/createPost/createPost";
+import { useCreatePost } from "@/context/CreatePostContext";
 
 export default function Home() {
+
+    const { openPost } = useCreatePost();
     return (
         <div className="pt-[10%] min-h-screen flex flex-col md:flex-row gap-6 p-6 "> 
         {/* bg-gray-100 */}
@@ -10,18 +14,22 @@ export default function Home() {
             <div className="md:w-2/3 flex flex-col gap-6">
                 {/* Търсачка и бутон */}
                 <div className="bg-white p-4 rounded-xl shadow-md flex items-center gap-4">
-                    <form className="flex-grow flex items-center gap-2">
+                    <form className="relative flex-grow flex items-center gap-2">
                         <input
                             type="text"
                             placeholder="Търси..."
                             className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                         />
-                        <button type="submit" className="bg-brandeis-blue text-white px-4 py-2 rounded-lg hover:bg-blue-600">
-                            Търси
+                        <button type="submit" className="absolute right-2 bg-marian-blue text-white p-1 rounded-full">
+                            🔍
                         </button>
                     </form>
-                    <button className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
-                        Създай публикация
+                    {/* бутон за отваряне на CreatePost */}
+                    <button
+                    className="bg-safety-orange text-white px-4 py-2 rounded-lg"
+                    onClick={openPost}
+                    >
+                        Създай публикация 
                     </button>
                 </div>
 
@@ -149,11 +157,10 @@ export default function Home() {
             </div>
 
             {/* Дясна секция - Теми */}
-            <div className="flex items-stretch flex-col right-0 overflow-y-auto custom-scrollbar h-[70vh] right-0 md:w-1/3 bg-white p-4 rounded-xl shadow-md">
-                <div className="absolute flex h-10 bg-red-500">
-                  <h2 className="text-xl w-full font-semibold mb-3">Теми</h2>
-                </div>
-                <ul className="space-y-2">
+            <div className=" right-0 md:w-1/3 bg-white rounded-2xl shadow-md h-[75vh] overflow-hidden shadow-md">
+            <h2 className="w-[100%] bg-jordy-blue p-4 font-semibold text-base">
+                Категории</h2>
+                  <ul className="h-full overflow-y-auto custom-scrollbar p-4 space-y-2 flex items-stretch flex-col right-0 overflow-y-auto custom-scrollbar w-full bg-white p-4">
                     {[
                         { id: "blank", title: "blank" },
                         { id: "general-medicine", title: "Обща медицина" },

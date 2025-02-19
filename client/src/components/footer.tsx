@@ -18,7 +18,6 @@ export default function Footer() {
               <li><Link href='/info#about-us'>За нас</Link></li>
               <li><Link href='/info#features'>Функционалности</Link></li>
               <li><Link href='/info#faq'>Често задавани въпроси</Link></li>
-c
               </ul>
             </div>
   

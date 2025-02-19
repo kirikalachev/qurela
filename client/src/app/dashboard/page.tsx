@@ -77,7 +77,8 @@ export default function Dashboard() {
       )}
 
       <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60 ">
-        <div className="bg-platinum-gray rounded-2xl flex-[4] overflow-hidden flex-1">
+        {/* dark тъмна версия */}
+        <div className="bg-platinum-gray dark:bg-gray-800 rounded-2xl flex-[4] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-jordy-blue p-3 font-semibold text-base">Последни чатове</h3>
           <ul className="p-3 text-sm">
             <li>Какви са симптомите на диабет тип 2 и как се диагностицира?</li>
