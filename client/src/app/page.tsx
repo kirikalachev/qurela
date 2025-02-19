@@ -25,7 +25,7 @@ export default function App() {
 
   return (
     <main className="bg-white flex flex-col items-center min-h-[100vh] pt-[200px] md:pt-[10%]">
-        <section className='flex w-[85%] pb-[250px]'>
+        <section className='flex w-[86%] pb-[250px]'>
             <div className='flex-1 flex flex-col gap-8'>
                 <h2 className='text-marian-blue text-3xl font-medium'>
                     Заедно срещу дезинформацията!
@@ -61,7 +61,7 @@ export default function App() {
 
 
         <div className="flex justify-center items-center">
-      {/* <iframe
+      <iframe
         width="853"
         height="480"
         src="https://www.youtube.com/embed/QKk6IWuduSU"
@@ -71,7 +71,7 @@ export default function App() {
         referrerPolicy="strict-origin-when-cross-origin"
         allowFullScreen
         className='rounded-lg'
-      /> */}
+      />
 
 
     </div>
@@ -166,10 +166,27 @@ export default function App() {
             </div>
         </div>
     </section>
+{/* 
+    <section className='w-[100vw] bg-[#EBF3FF] flex flex-col gap-8 justify-center items-center h-[500px] rounded-xl overflow-hidden'>
+    <div className="w-full h-full overflow-hidden flex justify-center items-center">
+        <img src="/people.png" className="hover:scale-110 transition-transform duration-300 w-full h-auto" />
+    </div>
 
-    <section className='w-full bg-[#EBF3FF] flex flex-col gap-8 justify-center items-center '
-  style={{ backgroundImage: "url('/people.png')", backgroundSize: 'cover', backgroundPosition: 'center', height: '500px' }}>
+    <h2 className='text-white text-3xl font-semibold'>Имаш още въпроси?</h2>
 
+    <div className='flex gap-4 select-none'>
+        <Link href='/auth/signup' className='px-4 py-3 rounded-2xl bg-safety-orange text-white text-lg flex items-center justify-center'>
+            <span className='text-white'>Да започваме!</span>
+        </Link>
+        <Link href='/info#faq' className='px-8 py-3 rounded-2xl bg-marian-blue text-white text-lg flex items-center justify-center'>
+            <span className='text-white'>ЧЗВ</span>
+        </Link>
+    </div>
+</section> */}
+
+<section className='w-[100vw] bg-[#EBF3FF] flex flex-col gap-8 justify-center items-center h-[500px] rounded-xl oveflow-hidden'
+style={{ backgroundImage: "url('/people.png')", backgroundSize: 'cover', backgroundPosition: 'center', height: '500px' }}>
+{/* <img src="/people.png" className="hover:scale-110 transition-transform duration-300 w-full h-auto" /> */}
     <h2 className='text-white text-3xl font-semibold'>Имаш още въпроси?</h2>
 
     <div className='flex gap-4 select-none'>
@@ -182,6 +199,7 @@ export default function App() {
     </div>
 
 </section>
+
 
     </main>
   );

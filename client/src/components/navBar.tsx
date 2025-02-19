@@ -140,6 +140,8 @@ const Navbar: React.FC = () => {
 
   const signOut = async () => {
     localStorage.removeItem("popupShowed");
+    localStorage.removeItem("theme");
+
     try {
       const token = Cookies.get("token"); // Взимаме токена от cookies
 
@@ -178,10 +180,10 @@ const Navbar: React.FC = () => {
       {/* Desktop Navbar */}
       <nav
         className={`select-none hidden md:flex fixed top-0 w-full h-[20px] items-center justify-between transition-all z-[50] ${
-          isScrolled ? "bg-marian-blue p-[25px]" : "p-[45px]"
+          isScrolled ? "bg-marian-blue p-[25px]" : "py-[45px] px-[90px]"
         }`}
       >
-        <h1 className={`text-4xl font-bold cursor-pointer ${isScrolled ? "text-white" : ""}`}>
+        <h1 className={`text-4xl font-bold cursor-pointer ${isScrolled ? "text-white" : "dark:text-d-cadet-gray "}`}>
           <Link href="/dashboard">Qurela</Link>
         </h1>
 
@@ -199,7 +201,7 @@ const Navbar: React.FC = () => {
                 isScrolled ? "hover:bg-safety-orange" : "hover:bg-black-50"
               }`}
             >
-              <span className={`z-1 ${isScrolled ? "text-white" : ""}`}>
+              <span className={`z-1 ${isScrolled ? "text-white" : "dark:text-d-cadet-gray"}`}>
                 <>Асистент</>
               </span>
 
@@ -239,7 +241,7 @@ const Navbar: React.FC = () => {
                 isScrolled ? "hover:bg-safety-orange" : "hover:bg-black-50"
               }`}
             >
-              <span className={`${isScrolled ? "text-white" : ""}`}>
+              <span className={`${isScrolled ? "text-white" : "dark:text-d-cadet-gray"}`}>
                 <Link href="/forum">Форум</Link>
               </span>
             </li>
@@ -256,7 +258,7 @@ const Navbar: React.FC = () => {
                   src={Plus}
                   alt="Създай публикация"
                   title="Създай публикация"
-                  className={`h-6 w-auto ${isScrolled ? "white-svg" : ""}`}
+                  className={`h-6 w-auto ${isScrolled ? "white-svg dark-theme-svg" : ""}`}
                 />
               </span>
             </li>

@@ -11,9 +11,10 @@ export default {
     extend: {
       colors: {
         background: "var(--background)",
-        foreground: "var(--foreground)",
         "alice-blue": "#EBF3FF",
         "uranian-blue": "#C1DAFF",
+        "night-color": "#0A0C0E",
+        foreground: "var(--foreground)",
         "jordy-blue": "#85B6FF",
         "brandeis-blue": "#0A6CFF",
         "marian-blue": "#00398F",
@@ -21,7 +22,12 @@ export default {
         "platinum-gray": "#E7E7E7",
         'black-50': 'rgba(0, 0, 0, 0.1)',
         "Anti-flash-white": "#F0F0F0",
-        "safety-orange": "#FA7601"
+        "safety-orange": "#FA7601",
+        // dark theme  (d-)
+        "d-cadet-gray": "#A6ADBB",
+        "d-rich-black": "#15191E",
+        "d-charcoal": "#35404A",
+        "d-gunmetal": "#232830 ",
       },
       borderRadius: {
         "basic-round": "15px",

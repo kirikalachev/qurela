@@ -2,7 +2,7 @@
 
 export default function PolicyPage() {
   return (
-    <main className="flex flex-col items-center pt-[5%] min-h-[100vh] px-6">
+    <main className="flex flex-col items-center pt-[5%] min-h-[100vh] px-6 text-rich-black dark:text-d-cadet-gray">
         {/* <div ></div> */}
       {/* Политика за поверителност */}
       <section id="privacy-policy" className="max-w-3xl my-10">

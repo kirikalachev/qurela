@@ -29,8 +29,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <Metadatafunc />
-      <body className='bg-gradient-to-b from-alice-blue to-uranian-blue min-h-[100vh]'>
-        <CreatePostProvider>
+      <body className="bg-gradient-to-b from-alice-blue to-uranian-blue dark:bg-gradient-to-b dark:from-night-color dark:to-night-color min-h-[100vh]">
+      <CreatePostProvider>
           {!isSignInPage && !isSignUpPage && <NavigationBar />}
           {children}
           {!isSignInPage && !isSignUpPage && <Footer />}

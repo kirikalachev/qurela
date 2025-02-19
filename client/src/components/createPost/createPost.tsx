@@ -26,17 +26,18 @@ const CreatePost = () => {
         onClick={closePost}
         ></span>
 
-      <div className="p-5 flex flex-col w-[55%] h-[55%] bg-white z-[52] gap-3 rounded">
+      <div className="p-5 flex flex-col w-[55%] h-[55%] bg-white z-[52] gap-3 rounded dark:bg-d-rich-black">
         <div className="flex-[1] flex items-center justify-between px-2 select-none">
-          <h2 className="text-xl font-medium">Създай публикация</h2>
+          <h2 className="text-xl font-medium dark:text-d-cadet-gray">Създай публикация</h2>
           <button onClick={closePost} className="text-xl cursor-pointer">x</button>
         </div>
         <div className="flex-[15] flex flex-col items-stretched gap-4">
           <textarea
-            className="flex-[2] p-2 outline-none border rounded border-[#A9A9AC]"
+            placeholder="Заглавие"
+            className="dark:text-d-cadet-gray flex-[2] p-2 outline-none border rounded border-[#A9A9AC] dark:bg-d-charcoal"
           />
           <textarea
-            className="flex-[8] p-2 outline-none border rounded border-[#A9A9AC]"
+            className="dark:text-d-cadet-gray flex-[8] p-2 outline-none border rounded border-[#A9A9AC] dark:bg-d-charcoal"
             placeholder="За какво си мислите?"
           />
         </div>

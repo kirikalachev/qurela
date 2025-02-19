@@ -36,19 +36,19 @@ export default function Dashboard() {
 
 
   return (
-    <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center">
+    <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center ">
             {showPopup && <PopupNotification />}
-      <h2 className="text-2xl md:text-3xl font-bold">{inputValue}</h2>
+      <h2 className="dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">{inputValue}</h2>
       <div className="flex justify-center items-center flex-col w-full">
         <form
-          className="bg-white flex justify-between md:justify-center items-center w-[90%] h-fit md:w-[55%] md:h-[55px] m-[1vh] p-[7px] rounded-2xl md:rounded-full md:flex-nowrap flex-wrap"
+          className="dark:bg-d-rich-black bg-white flex justify-between md:justify-center items-center w-[90%] h-fit md:w-[55%] md:h-[55px] m-[1vh] p-[7px] rounded-2xl md:rounded-full md:flex-nowrap flex-wrap"
           onSubmit={redirectToAssistant}
         >
           <textarea
             className="flex-[100%] md:hidden outline-none w-full h-[120px] px-1 text-basis whitespace-nowrap overflow-hidden"
           />
           <select
-            className="p-2 md:h-[100%] bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
+            className="p-2 md:h-[100%] dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
             onChange={handleSelectChange}
           >
             <option data-type="check" value="Проверка на информация">Проверка</option>
@@ -56,7 +56,7 @@ export default function Dashboard() {
             <option data-type="summarize" value="Обобщи информация">Обобщение</option>
           </select>
           <input
-            className="outline-none w-full max-h-6 px-1 text-basis hidden md:block"
+            className="outline-none w-full max-h-6 px-1 text-basis hidden md:block bg-transparent dark:text-d-cadet-gray"
             placeholder="Съобщение до Qurela"
             autoFocus
           />
@@ -78,17 +78,17 @@ export default function Dashboard() {
 
       <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60 ">
         {/* dark тъмна версия */}
-        <div className="bg-platinum-gray dark:bg-gray-800 rounded-2xl flex-[4] overflow-hidden flex-1">
+        <div className="bg-platinum-gray dark:bg-d-rich-black rounded-2xl flex-[4] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-jordy-blue p-3 font-semibold text-base">Последни чатове</h3>
           <ul className="p-3 text-sm">
-            <li>Какви са симптомите на диабет тип 2 и как се диагностицира?</li>
-            <li>Каква е разликата между вирусна и бактериална инфекция?</li>
-            <li>Какви са основните рискови фактори за сърдечно-съдови заболявания?</li>
-            <li>Какво е значение на имунната система и какво може да я отслаби?</li>
+            <li className='dark:text-d-cadet-gray'>Какви са симптомите на диабет тип 2 и как се диагностицира?</li>
+            <li className='dark:text-d-cadet-gray'>Каква е разликата между вирусна и бактериална инфекция?</li>
+            <li className='dark:text-d-cadet-gray'>Какви са основните рискови фактори за сърдечно-съдови заболявания?</li>
+            <li className='dark:text-d-cadet-gray'>Какво е значение на имунната система и какво може да я отслаби?</li>
           </ul>
         </div>
 
-        <div className="flex flex-col bg-platinum-gray rounded-2xl flex-[3] overflow-hidden flex-1">
+        <div className="flex flex-col bg-platinum-gray dark:bg-d-rich-black rounded-2xl flex-[3] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-brandeis-blue p-3 text-white font-semibold text-base">Избор на редактора</h3>
           <span className="w-full h-[100%] flex justify-center items-center">
             <p className="text-base font-bold text-gray-500">Празно</p>
@@ -96,35 +96,57 @@ export default function Dashboard() {
         </div>
       </div>
       {/* forum */}
-      <h2 className="text-2xl md:text-3xl font-bold self-start mx-[5%] md:self-center md:mx-[0] mt-[5%]">
+      <h2 className="mt-12 dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">
         Трендинг
       </h2>
-      <div className='flex w-full justify-center'>
-        <div className="min-h-12 w-[70%] bg-white p-4 rounded-xl shadow-md">
-                      {/* Профилна информация */}
-                      <div className="flex items-center gap-4 mb-4">
-                          <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
-                          <div>
-                              <h4 className="font-bold">Име</h4>
-                              <p className="text-gray-500 text-sm">Дата на качване</p>
-                          </div>
-                      </div>
+      <div className='flex w-full flex-col gap-4 items-center'>
+        <div className="min-h-12 w-[65%] bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black dark:text-d-cadet-gray">
+                    {/* Профилна информация */}
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
+                        <div>
+                            <h4 className="font-bold">Име</h4>
+                            <p className="text-gray-500 text-sm">Дата на качване</p>
+                        </div>
+                    </div>
 
-                      {/* Съдържание на поста */}
-                      <div className="mb-4">
-                          <h3 className="font-semibold text-lg">Заглавие на поста</h3>
-                          <p className="text-gray-700">Съдържание на поста
-                            Lorem ipsum dolor sit amet, consectetur adipisicing elit. Voluptatibus eius in, ratione distinctio, deserunt facere sint facilis delectus esse sit obcaecati at! Tempore doloribus aspernatur maxime? Molestiae voluptatum ad dolorum?
-                          </p>
-                      </div>
+                    {/* Съдържание на поста */}
+                    <div className="mb-4">
+                        <h3 className="font-semibold text-lg">Заглавие на поста</h3>
+                        <p className="text-gray-700 dark:text-d-cadet-gray">Съдържание на поста</p>
+                    </div>
 
-                      {/* Интеракция */}
-                      <div className="flex gap-4 text-sm">
-                          <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
-                          <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
-                          <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
-                          <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
-                      </div>
+                    {/* Интеракция */}
+                    <div className="flex gap-4 text-sm">
+                        <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
+                        <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
+                        <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
+                        <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
+                    </div>
+        </div>
+        <div className="min-h-12 w-[65%] bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black dark:text-d-cadet-gray">
+                    {/* Профилна информация */}
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
+                        <div>
+                            <h4 className="font-bold">Име</h4>
+                            <p className="text-gray-500 text-sm">Дата на качване</p>
+                        </div>
+                    </div>
+
+                    {/* Съдържание на поста */}
+                    <div className="mb-4">
+                        <h3 className="font-semibold text-lg">Заглавие на поста</h3>
+                        <p className="text-gray-700 dark:text-d-cadet-gray">Съдържание на поста</p>
+                    </div>
+
+                    {/* Интеракция */}
+                    <div className="flex gap-4 text-sm">
+                        <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
+                        <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
+                        <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
+                        <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
+                    </div>
         </div>
       </div>
     </main>

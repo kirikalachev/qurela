@@ -10,7 +10,7 @@ export default function Info() {
     };
 
     return (
-        <main className="flex flex-col items-center pt-[5%] min-h-[100vh] px-6">
+        <main className="flex flex-col items-center pt-[5%] min-h-[100vh] px-6 text-rich-black dark:text-d-cadet-gray">
             {/* About Us Section */}
             <section id="about-us" className="max-w-3xl text-center my-10">
                 <h2 className="text-3xl font-semibold text-marian-blue mb-4">За нас</h2>
@@ -49,19 +49,19 @@ export default function Info() {
             </section>
 
             {/* FAQ Section */}
-            <section id="faq" className="max-w-3xl my-10">
+            <section id="faq" className="max-w-3xl overflow-hidden my-10">
                 <h2 className="text-3xl font-semibold text-marian-blue mb-6">Често задавани въпроси</h2>
-                <div className="flex gap-4 flex-col max-w-[600px]">
+                <div className="flex gap-4 flex-col w-[600px]">
                     {[ 
                         { question: "Как да се регистрирам?", answer: "Просто натиснете бутона \"Регистрация\" и следвайте инструкциите." },
                         { question: "Как мога да нулирам паролата си?", answer: "Отидете в секцията \"Забравена парола\" и следвайте стъпките." },
                         { question: "Безопасни ли са личните ми данни?", answer: "Да! Използваме най-съвременни технологии за криптиране и защита." }
                     ].map((item, index) => (
-                        <div key={index} className="bg-platinum-gray text-rich-black rounded-lg w-full">
-                            <h3 className="text-xl font-medium cursor-pointer p-3" onClick={() => toggleAnswer(index)}>
+                        <div key={index} className="bg-platinum-gray text-rich-black rounded-lg dark:bg-d-charcoal">
+                            <h3 className="dark:text-d-cadet-gray text-lg font-medium cursor-pointer p-3" onClick={() => toggleAnswer(index)}>
                                 {item.question}
                             </h3>
-                            <p className={`max-w-full mt-2 overflow-hidden transition-all duration-300 ${openIndex === index ? 'max-h-12 p-3' : 'max-h-0'}`}>{item.answer}</p>
+                            <p className={`dark:text-d-cadet-gray w-full px-3 mt-2 overflow-hidden transition-all duration-300 ${openIndex === index ? 'max-h-12 py-3' : 'max-h-0 py-0'}`}>{item.answer}</p>
                         </div>
                     ))}
                 </div>

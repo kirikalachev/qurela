@@ -55,12 +55,12 @@ export default function ComboboxWithSearch() {
         }}
         onFocus={() => setIsOpen(true)}
         placeholder="Изберете тема"
-        className="w-full p-2 bg-white border border-gray-300 rounded-lg shadow-md text-left focus:ring-2 focus:ring-blue-500"
+        className="dark:bg-d-charcoal w-full p-2 bg-white border border-gray-300 rounded-lg shadow-md text-left focus:ring-2 focus:ring-blue-500"
       />
 
       {/* Dropdown Options */}
       {isOpen && (
-        <ul className="overflow-y-auto absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40">
+        <ul className="dark:bg-d-charcoal overflow-y-auto absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40">
           {displayedOptions.map((option) => (
             <li
               key={option}

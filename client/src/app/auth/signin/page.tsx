@@ -44,7 +44,7 @@ const SignIn: React.FC = () => {
     <main className="h-[100vh] overflow-hidden">
       <div className="absolute w-full h-full bg-rich-black">
         <video className="object-cover h-full w-full" autoPlay muted loop>
-          <source src="background.mp4" type="video/mp4" />
+          <source src="/background.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       </div>
@@ -53,7 +53,7 @@ const SignIn: React.FC = () => {
         <div className="absolute w-full max-w-3xl bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="flex">
             <Link href="/" className="absolute top-[15px] left-[15px]">Назад</Link>
-            <div className="hidden lg:flex flex-col justify-center items-center w-1/2 text-white text-center p-8 bg-center bg-cover bg-[url(/images/login-img.jpg)]">
+            <div className="hidden lg:flex flex-col justify-center items-center w-1/2 text-center p-8 bg-center bg-cover bg-[url(/images/login-img.jpg)]">
               <h2 className="text-2xl font-semibold">Добре дошли отново</h2>
               <p className="mt-4">
                 Моля, влезте, използвайки вашата лична информация, за да останете свързани с нас.
