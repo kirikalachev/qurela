@@ -100,33 +100,36 @@ export default function App() {
 
     <img src="/wave.png" alt="dfs" width="100%" height="auto" className='pt-[150px]'/>
 
-    <section className="bg-[#EBF3FF] w-full flex flex-col md:flex-row gap-8 items-center py-12 px-6">
-  <div className="p-8 flex-1 bg-white rounded-lg shadow-xl">
-    <h2 className="text-marian-blue text-3xl font-bold mb-8">Нашите цели</h2>
-    
-    <div className="relative goals-container flex justify-between">
-    <div className="absolute top-[5px] left-0 w-full border-t-4 border-marian-blue"></div>
+    <section className="bg-[#EBF3FF] w-full flex flex-col md:flex-row gap-4 items-center py-12 px-6">
+    <div className="p-8 flex-1 rounded-lg overflow-hidden">
+    <h2 className="text-marian-blue text-3xl font-bold mb-8">
+      Нашите цели
+    </h2>
+    <div className="relative goals-container flex flex-col items-start">
+      {/* Вертикалната линия */}
+      <div className="whitespace-nowrap absolute left-[5px] flex flex-col gap-10 top-0 h-full border-l-4 border-marian-blue"></div>
 
-      <div className="goal flex flex-col items-center transition-all duration-300 cursor-pointer">
+      <div className="whitespace-nowrap goal flex items-center justify-start gap-4 transition-all duration-300 cursor-pointer">
         <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
-        <p className="goal-text mt-4 text-gray-800 text-center text-base transition-all duration-300 ease-in-out">
+        <p className="whitespace-nowrap  goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
           Бърза, точна и автоматизирана проверка на медицинска информация.
         </p>
       </div>
-      <div className="goal flex flex-col items-center transition-all duration-300 cursor-pointer">
+      <div className="goal flex items-center justify-start gap-4 transition-all duration-300 cursor-pointer mt-8">
         <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
-        <p className="goal-text mt-4 text-gray-800 text-center text-base transition-all duration-300 ease-in-out">
+        <p className="goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
           Борба с дезинформацията в здравния сектор.
         </p>
       </div>
-      <div className="goal flex flex-col items-center transition-all duration-300 cursor-pointer">
+      <div className="goal flex items-center justify-start gap-4 transition-all duration-300 cursor-pointer mt-8">
         <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
-        <p className="goal-text mt-4 text-gray-800 text-center text-base transition-all duration-300 ease-in-out">
+        <p className="goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
           Улесняваме създаването на надеждно медицинско съдържание.
         </p>
       </div>
     </div>
-  </div>
+    </div>
+
   <div className="flex-1">
     <LoadingScreen />
   </div>
@@ -134,12 +137,12 @@ export default function App() {
   <style jsx>{`
     /* При hover върху контейнера, всички текстове по подразбиране стават малко по-малки */
     .goals-container:hover .goal .goal-text {
-      font-size: 0.95rem;
+      font-size: 1.0rem;
       transition: font-size 0.3s ease-in-out;
     }
     /* Когато конкретната цел (goal) е hover-ната, нейният текст става малко по-голям */
     .goal:hover .goal-text {
-      font-size: 1.1rem !important;
+      font-size: 1.15rem !important;
     }
     /* При hover върху целта, точката става малко по-голяма */
     .goal div {
@@ -160,19 +163,18 @@ export default function App() {
 
 {/* team */}
     <section className='w-full flex bg-[#EBF3FF] justify-center flex-col items-center gap-10 pb-[200px]'>
-        <h2 className='text-marian-blue text-2xl font-medium text-center w-full font-medium'>
-            Нашият екип
+    <h2 className="text-marian-blue text-3xl font-bold mb-8">            Нашият екип
         </h2>
         <div className='flex justify-betweem w-[50%]'>
             <div className='flex-col flex justify-center items-center '>
-                <img src="/roblox.png" alt="dfs" width="40%" height="auto" className='pt-[]'/>
+                <img src="/roblox.png" alt="dfs" width="60%" height="auto" className='pt-[]'/>
                 <p className='text-[#2e2e2e] text-lg'>
                     Кирил, 16
                 </p>
             </div>
 
             <div className='flex flex-col justify-center items-center '>
-                <img src="/roblox.png" alt="dfs" width="40%" height="auto" className='pt-[]'/>
+                <img src="/roblox.png" alt="dfs" width="60%" height="auto" className='pt-[]'/>
                 <p className='text-[#2e2e2e] text-lg'>
                     Християн, 16
                 </p>
