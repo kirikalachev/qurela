@@ -48,7 +48,7 @@ const YourComponent = () => {
       <h2 className='text-marian-blue text-2xl font-medium'>
         Демо
       </h2>
-      <div className="flex gap-6 flex-col h-[300px]">
+      <div className="text-gray-800 flex gap-6 flex-col h-[300px]">
         {/* Text Input Form */}
         <div className="flex flex-col rounded-xl flex-[8] bg-white">
           <textarea
