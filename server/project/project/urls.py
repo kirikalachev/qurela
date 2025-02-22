@@ -22,4 +22,5 @@ urlpatterns = [
     path("", include("home.urls")),
     path("api/", include("authentication.urls")),
     path("", include("medical_assistant.urls")),
+    path("forum/", include("forum.urls")), 
 ]

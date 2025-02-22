@@ -32,10 +32,12 @@ INSTALLED_APPS = [
     'home',
     'authentication',
     'medical_assistant',
-    'corsheaders',  # CORS support for Next.js
-    'rest_framework',  # Django REST framework
-    'rest_framework_simplejwt',  # JWT Authentication
+    'forum',
+    'corsheaders',
+    'rest_framework',
+    'rest_framework_simplejwt',
 ]
+
 
 # Middleware
 MIDDLEWARE = [
