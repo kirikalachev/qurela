@@ -15,6 +15,7 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     upvotes = models.IntegerField(default=0)
     downvotes = models.IntegerField(default=0)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.title
@@ -31,7 +32,6 @@ class Vote(models.Model):
 
     class Meta:
         unique_together = ('user', 'post')
-
 
 class Comment(models.Model):
     post = models.ForeignKey(Post, related_name='comments', on_delete=models.CASCADE)
