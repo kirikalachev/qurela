@@ -9,17 +9,27 @@ interface ProfileData {
   username: string;
   email: string;
   name: string;
-  profilePic: string; // URL към текущата профилна снимка
+  profilePic: string | null; 
+}
+
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  created_at: string;
 }
 
 const Profile = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
 
   useEffect(() => {
-    const token = Cookies.get("token"); // Вземане на JWT token от cookies
+    const token = Cookies.get("token");
 
     if (!token) {
       console.error("Няма токен, пренасочване към вход...");
@@ -27,15 +37,13 @@ const Profile = () => {
       return;
     }
 
+    // Fetch profile data
     axios
       .get("http://127.0.0.1:8000/api/account/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
       .then((response) => {
-        // API-то трябва да върне обект с полетата: username, email, name и profilePic
         setProfileData(response.data);
       })
       .catch((error) => {
@@ -48,6 +56,30 @@ const Profile = () => {
           router.push("/auth/signin");
         }
       });
+
+    // Fetch user's posts
+// Fetch user's posts
+axios
+  .get("http://127.0.0.1:8000/my_posts/", {
+    headers: { Authorization: `Bearer ${token}` },
+    withCredentials: true,
+  })
+  .then((response) => {
+    console.log(response.data);  // Проверка на отговор
+    setUserPosts(response.data.published_posts);
+    setLoading(false);
+  })
+  .catch((error) => {
+    console.error("Error fetching user posts:", error);
+    setError(
+      error.response?.data?.detail || "Неуспешно зареждане на публикациите."
+    );
+    if (error.response?.status === 401) {
+      router.push("/auth/signin");
+    }
+    setLoading(false);
+  });
+
   }, [router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,13 +97,12 @@ const Profile = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const token = Cookies.get("token"); // Вземаме токена от cookies
+    const token = Cookies.get("token");
     if (!token) {
       router.push("/auth/signin");
       return;
     }
 
-    // Използваме FormData, за да може да се изпрати и файл
     const formData = new FormData();
     formData.append("email", profileData!.email);
     formData.append("name", profileData!.name);
@@ -93,8 +124,8 @@ const Profile = () => {
         }
       );
       setProfileData(response.data);
-      setSelectedFile(null); // Изчистваме избрания файл след успешно обновяване
-      // Може да добавите и уведомление за успешна актуализация
+      setSelectedFile(null);
+      setError(null); // Clear error if update is successful
     } catch (error: any) {
       console.error("Грешка при обновяване на данните за профила:", error);
       setError(
@@ -104,12 +135,16 @@ const Profile = () => {
     }
   };
 
+  if (loading) {
+    return <p>Зареждане...</p>;
+  }
+
   if (error) {
     return <p className="text-red-500">Грешка: {error}</p>;
   }
 
   if (!profileData) {
-    return <p>Зареждане...</p>;
+    return <p>Няма налични данни за профила.</p>;
   }
 
   return (
@@ -118,11 +153,18 @@ const Profile = () => {
         <div className="p-5 h-[500px] bg-platinum-gray dark:bg-d-rich-black rounded-xl">
           <h2 className="text-2xl font-bold mb-4">Профил на акаунта</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Снимка */}
+            {/* Profile Picture */}
             <div>
               <label htmlFor="profilePic" className="block font-medium">
                 Профилна снимка
               </label>
+              {profileData.profilePic && (
+                <img
+                  src={profileData.profilePic}
+                  alt="Profile Picture"
+                  className="w-24 h-24 rounded-full mb-2"
+                />
+              )}
               <input
                 type="file"
                 id="profilePic"
@@ -131,25 +173,9 @@ const Profile = () => {
                 onChange={handleFileChange}
                 className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
               />
-              {/* Преглед на текущата/избраната снимка */}
-              <div className="mt-2">
-                {selectedFile ? (
-                  <img
-                    src={URL.createObjectURL(selectedFile)}
-                    alt="Preview"
-                    className="w-32 h-32 object-cover rounded-full"
-                  />
-                ) : profileData.profilePic ? (
-                  <img
-                    src={profileData.profilePic}
-                    alt="Профилна снимка"
-                    className="w-32 h-32 object-cover rounded-full"
-                  />
-                ) : null}
-              </div>
             </div>
 
-            {/* Име */}
+            {/* Input fields for profile data */}
             <div>
               <label htmlFor="name" className="block font-medium">
                 Име
@@ -163,8 +189,6 @@ const Profile = () => {
                 className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
               />
             </div>
-
-            {/* Потребителско име */}
             <div>
               <label htmlFor="username" className="block font-medium">
                 Потребителско име
@@ -178,8 +202,6 @@ const Profile = () => {
                 className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
               />
             </div>
-
-            {/* Имейл */}
             <div>
               <label htmlFor="email" className="block font-medium">
                 Имейл
@@ -193,11 +215,7 @@ const Profile = () => {
                 className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
               />
             </div>
-
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-            >
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
               Запази промените
             </button>
           </form>
@@ -206,33 +224,19 @@ const Profile = () => {
       <div className="flex-[3] p-10 h-[500px]">
         <h2 className="text-xl font-semibold mb-2">Моите публикации</h2>
         <div className="flex flex-col gap-4 overflow-y-auto h-[480px]">
-          <div className="bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black">
-            {/* Профилна информация */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
-              <div>
-                <h4 className="font-bold">Име</h4>
-                <p className="text-gray-500 text-sm">Дата на качване</p>
+          {userPosts.length > 0 ? (
+            userPosts.map((post) => (
+              <div key={post.id} className="bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black">
+                <h3 className="font-semibold text-lg">{post.title}</h3>
+                <p className="text-gray-700">{post.content}</p>
+                <p className="text-gray-500 text-sm">
+                  {new Date(post.created_at).toLocaleDateString()}
+                </p>
               </div>
-            </div>
-
-            {/* Съдържание на поста */}
-            <div className="mb-4">
-              <h3 className="font-semibold text-lg">Заглавие на поста</h3>
-              <p className="text-gray-700">Съдържание на поста</p>
-            </div>
-
-            {/* Интеракция */}
-            <div className="flex gap-4 text-sm">
-              <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
-              <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
-              <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
-              <Link href="#" className="text-blue-500 hover:underline">
-                #Тема
-              </Link>
-            </div>
-          </div>
-          {/* Additional posts here... */}
+            ))
+          ) : (
+            <p>Нямате публикувани постове.</p>
+          )}
         </div>
       </div>
     </main>

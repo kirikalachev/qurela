@@ -74,6 +74,8 @@ def save_post(request, post_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_posts(request):
+    # Проверка дали потребителят е правилен
+    print(f"User: {request.user}")
     published_posts = Post.objects.filter(author=request.user)
     saved_posts = SavedPost.objects.filter(user=request.user)
 
@@ -81,6 +83,7 @@ def user_posts(request):
         "published_posts": PostSerializer(published_posts, many=True).data,
         "saved_posts": SavedPostSerializer(saved_posts, many=True).data,
     })
+
 
 # Upvote a post
 @api_view(["POST"])
