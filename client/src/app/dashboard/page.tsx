@@ -1,19 +1,28 @@
-// dashboard.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
-import api from '@/lib/api'; 
+import axios from 'axios';
+import Cookies from 'js-cookie';
 import Link from "next/link";
-import '@/app/style.css';
 import PopupNotification from "../../components/popupNottification";
 
-interface ProfileData {
-  username: string;
+interface Post {
+  id: number;
+  title: string;
+  content: string;
+  author: string;
+  created_at: string;
+  upvotes: number;
+  downvotes: number;
+  category: string;
 }
 
 export default function Dashboard() {
   const [showPopup, setShowPopup] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [inputValue, setInputValue] = useState('Проверка на информация');
+  const [protectedData, setProtectedData] = useState<any>(null);
 
   useEffect(() => {
     const popupShowed = localStorage.getItem("popupShowed");
@@ -22,22 +31,82 @@ export default function Dashboard() {
     }
   }, []);
 
-  const [inputValue, setInputValue] = useState('Проверка на информация');
-  const [protectedData, setProtectedData] = useState<any>(null);
-  
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) return;
+
+    axios
+      .get("http://127.0.0.1:8000/forum/posts/", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        setPosts(response.data);
+      })
+      .catch((error) => {
+        console.error("Грешка при зареждане на публикации:", error);
+      });
+  }, []);
+
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setInputValue(e.target.value);
   };
+
+  const handleVote = (postId: number, type: "upvote" | "downvote") => {
+    const token = Cookies.get("token");
+    if (!token) return;
+  
+    // Keep track of the previous vote values before making a change
+    const previousPosts = [...posts];
+  
+    // Local update for instant feedback
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              upvotes: type === "upvote" ? post.upvotes + 1 : post.upvotes,
+              downvotes: type === "downvote" ? post.downvotes + 1 : post.downvotes,
+            }
+          : post
+      )
+    );
+  
+    const url =
+      type === "upvote"
+        ? `http://127.0.0.1:8000/forum/posts/${postId}/upvote/`
+        : `http://127.0.0.1:8000/forum/posts/${postId}/downvote/`;
+  
+    // Send the vote request to the server
+    axios
+    .post(url, {}, { headers: { Authorization: `Bearer ${token}` } })
+    .then((response) => {
+      console.log("Vote response:", response.data);
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                upvotes: response.data.upvotes,
+                downvotes: response.data.downvotes,
+              }
+            : post
+        )
+      );
+    })
+  
+  };
+  
+  
+  
 
   const redirectToAssistant = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     window.location.href = '/assistant';
   };
 
-
   return (
-    <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center ">
-            {showPopup && <PopupNotification />}
+    <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center">
+      {showPopup && <PopupNotification />}
       <h2 className="dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">{inputValue}</h2>
       <div className="flex justify-center items-center flex-col w-full">
         <form
@@ -51,9 +120,9 @@ export default function Dashboard() {
             className="p-2 md:h-[100%] dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
             onChange={handleSelectChange}
           >
-            <option data-type="check" value="Проверка на информация">Проверка</option>
-            <option data-type="question" value="Задайте въпрос">Въпрос</option>
-            <option data-type="summarize" value="Обобщи информация">Обобщение</option>
+            <option value="Проверка на информация">Проверка</option>
+            <option value="Задайте въпрос">Въпрос</option>
+            <option value="Обобщи информация">Обобщение</option>
           </select>
           <input
             className="outline-none w-full max-h-6 px-1 text-basis hidden md:block bg-transparent dark:text-d-cadet-gray"
@@ -76,8 +145,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60 ">
-        {/* dark тъмна версия */}
+      <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60">
         <div className="bg-platinum-gray dark:bg-d-rich-black rounded-2xl flex-[4] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-jordy-blue p-3 font-semibold text-base">Последни чатове</h3>
           <ul className="p-3 text-sm">
@@ -95,59 +163,45 @@ export default function Dashboard() {
           </span>
         </div>
       </div>
-      {/* forum */}
-      <h2 className="mt-12 dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">
-        Трендинг
-      </h2>
+
+      <h2 className="mt-12 dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">Трендинг</h2>
       <div className='flex w-full flex-col gap-4 items-center'>
-        <div className="min-h-12 w-[65%] bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black dark:text-d-cadet-gray">
-                    {/* Профилна информация */}
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
-                        <div>
-                            <h4 className="font-bold">Име</h4>
-                            <p className="text-gray-500 text-sm">Дата на качване</p>
-                        </div>
-                    </div>
+        {posts.map((post) => (
+          <div key={post.id} className="min-h-12 w-[65%] bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black dark:text-d-cadet-gray">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+              <div>
+                <h4 className="font-bold">{post.author}</h4>
+                <p className="text-gray-500 text-sm">{new Date(post.created_at).toLocaleDateString()}</p>
+              </div>
+            </div>
 
-                    {/* Съдържание на поста */}
-                    <div className="mb-4">
-                        <h3 className="font-semibold text-lg">Заглавие на поста</h3>
-                        <p className="text-gray-700 dark:text-d-cadet-gray">Съдържание на поста</p>
-                    </div>
+            <div className="mb-4">
+              <h3 className="font-semibold text-lg">{post.title}</h3>
+              <p className="text-gray-700 dark:text-d-cadet-gray">{post.content}</p>
+            </div>
 
-                    {/* Интеракция */}
-                    <div className="flex gap-4 text-sm">
-                        <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
-                        <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
-                        <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
-                        <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
-                    </div>
-        </div>
-        <div className="min-h-12 w-[65%] bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black dark:text-d-cadet-gray">
-                    {/* Профилна информация */}
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div> {/* Профилна снимка (placeholder) */}
-                        <div>
-                            <h4 className="font-bold">Име</h4>
-                            <p className="text-gray-500 text-sm">Дата на качване</p>
-                        </div>
-                    </div>
-
-                    {/* Съдържание на поста */}
-                    <div className="mb-4">
-                        <h3 className="font-semibold text-lg">Заглавие на поста</h3>
-                        <p className="text-gray-700 dark:text-d-cadet-gray">Съдържание на поста</p>
-                    </div>
-
-                    {/* Интеракция */}
-                    <div className="flex gap-4 text-sm">
-                        <button className="text-gray-600 hover:text-blue-500">👍 Like</button>
-                        <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
-                        <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
-                        <Link href="#" className="text-blue-500 hover:underline">#Тема</Link>
-                    </div>
-        </div>
+            <div className="flex gap-4 text-sm">
+              <button
+                className="text-green-600 hover:text-green-800"
+                onClick={() => handleVote(post.id, "upvote")}
+              >
+                👍 {post.upvotes}
+              </button>
+              <button
+                className="text-red-600 hover:text-red-800"
+                onClick={() => handleVote(post.id, "downvote")}
+              >
+                👎 {post.downvotes}
+              </button>
+              <button className="text-gray-600 hover:text-blue-500">💬 Comment</button>
+              <button className="text-gray-600 hover:text-blue-500">🔗 Share</button>
+              <Link href={`/forum/post/${post.id}`} className="text-blue-500 hover:underline">
+                #{post.category}
+              </Link>
+            </div>
+          </div>
+        ))}
       </div>
     </main>
   );
