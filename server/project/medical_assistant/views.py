@@ -1,4 +1,8 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from .models import Conversation, Message
 from django.shortcuts import render
+from django.db.models import Count
 import re
 import spacy
 import requests
@@ -7,6 +11,52 @@ import requests
 nlp = spacy.load("en_core_web_sm")
 
 WHO_API_BASE_URL = "http://apps.who.int/gho/athena/api/"
+
+from django.db.models import Count
+
+@login_required
+def conversation_list(request):
+    conversations = Conversation.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'medical_assistant/conversation_list.html', {'conversations': conversations})
+
+@login_required
+def conversation_detail(request, conversation_id):
+    conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+    messages = conversation.messages.all().order_by('timestamp')
+    return render(request, 'medical_assistant/conversation_detail.html', {'conversation': conversation, 'messages': messages})
+
+@login_required
+def new_conversation(request):
+    return render(request, 'medical_assistant/conversation_detail.html', {'conversation': None, 'messages': []})
+
+@login_required
+def send_message(request, conversation_id=None):
+    conversation = None
+
+    if conversation_id:
+        # If a conversation exists, get it
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+
+    if request.method == 'POST':
+        user_message = request.POST.get('message')
+
+        if user_message:  # Only proceed if the user typed something
+            if not conversation:
+                # Create a new conversation if one doesn't exist
+                conversation = Conversation.objects.create(user=request.user)
+
+            # Save the user's message
+            Message.objects.create(conversation=conversation, sender='user', text=user_message)
+            
+            # Generate a bot response
+            Message.objects.create(conversation=conversation, sender='bot', text='Here is the response')
+
+            return redirect('conversation_detail', conversation_id=conversation.id)
+
+    return redirect('conversation_list')
+
+
+# ///responses:///
 
 def get_ngrams(doc, n):
     tokens = [token for token in doc if token.is_alpha]

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>converstion history</title>
+</head>
+<body>
+    <h2>Your Conversations</h2>
+    <ul>
+        {% for conversation in conversations %}
+            <li><a href="{% url 'conversation_detail' conversation.id %}">Conversation from {{ conversation.created_at }}</a></li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'new_conversation' %}">Start New Conversation</a>
+</body>
+</html>

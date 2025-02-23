@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>converstion</title>
+</head>
+<body>
+    <h2>Conversation</h2>
+    <div>
+        {% for message in messages %}
+            <p><strong>{{ message.sender }}</strong>: {{ message.text }}</p>
+        {% endfor %}
+    </div>
+    <form method="post" action="{% if conversation %}{% url 'send_message' conversation.id %}{% else %}{% url 'send_message_no_id' %}{% endif %}">
+        {% csrf_token %}
+        <input type="text" name="message" required>
+        <button type="submit">Send</button>
+    </form>    
+    <a href="{% url 'conversation_list' %}">Back to Conversations</a>
+</body>
+</html>
