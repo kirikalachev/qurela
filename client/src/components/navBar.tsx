@@ -58,10 +58,10 @@ const Navbar: React.FC = () => {
   const [toggleNavContentOpened, setToggleNavContentOpened] = useState(false);
   const [isLogged, setIsLogged] = useState(false); // Проверка дали потребителя е логнат
 
-  // Добавяме state за тъмна тема
+  // State for dark mode (theme stored in localStorage is still used for theme preference)
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Инициализиране на тъмния режим според localStorage (или може да добавиш и media query fallback)
+  // Инициализиране на тъмния режим според localStorage
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
     if (storedTheme === "dark") {
@@ -91,8 +91,8 @@ const Navbar: React.FC = () => {
   }
 
   useEffect(() => {
-    // Проверка за токен (в Cookies или localStorage)
-    const token = Cookies.get("token") || localStorage.getItem("token");
+    // Проверка за токен само в Cookies
+    const token = Cookies.get("token");
     setIsLogged(!!token);
   }, []);
 
@@ -139,6 +139,7 @@ const Navbar: React.FC = () => {
   };
 
   const signOut = async () => {
+    // Remove theme/popup flags from localStorage if needed
     localStorage.removeItem("popupShowed");
     localStorage.removeItem("theme");
 
@@ -153,19 +154,18 @@ const Navbar: React.FC = () => {
 
       const response = await axios.post(
         "http://127.0.0.1:8000/api/signout/",
-        {}, // Празен обект
+        {},
         {
-          withCredentials: true, // Изпращаме cookies
+          withCredentials: true,
           headers: {
-            Authorization: `Bearer ${token}`, // Прикачваме токена
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      console.log(response.data.message); // Debug
+      console.log(response.data.message);
 
-      // Премахваме токена
-      localStorage.removeItem("token");
+      // Премахваме токена от cookies
       Cookies.remove("token");
 
       // Пренасочване към login

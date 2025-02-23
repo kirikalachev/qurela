@@ -24,7 +24,7 @@ const SignIn: React.FC = () => {
         console.log("Login success:", response.data);
       
         // Store token in both localStorage and cookies
-        localStorage.setItem("token", response.data.tokens.access);
+        // localStorage.setItem("token", response.data.tokens.access);
         document.cookie = `token=${response.data.tokens.access}; path=/; Secure; SameSite=Strict`;
       
         // Записваме флаг, че току-що сме влезли

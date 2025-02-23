@@ -4,6 +4,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface Post {
   id: number;
@@ -16,15 +17,22 @@ interface Post {
   category: string; // добавено поле за темата
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 export default function ForumPage() {
   const { openPost } = useCreatePost();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]); // Ensure it's an array by default
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Fetch posts
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     if (!token) {
       console.error("Няма токен, пренасочване към вход...");
       router.push("/auth/signin");
@@ -33,9 +41,7 @@ export default function ForumPage() {
 
     axios
       .get("http://127.0.0.1:8000/forum/posts/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
       .then((response) => {
@@ -55,8 +61,30 @@ export default function ForumPage() {
       });
   }, [router]);
 
+  // Fetch categories from the database
+  useEffect(() => {
+    const token = Cookies.get("token");
+    if (!token) return;
+
+    axios
+      .get("http://127.0.0.1:8000/forum/categories/", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        // Check if the response is an array
+        if (Array.isArray(response.data)) {
+          setCategories(response.data);
+        } else {
+          console.error("Невалиден формат на данни за категории");
+        }
+      })
+      .catch((error) => {
+        console.error("Грешка при зареждане на категории:", error);
+      });
+  }, [router]);
+
   const handleVote = (postId: number, type: "upvote" | "downvote") => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     if (!token) return;
 
     const url =
@@ -65,15 +93,7 @@ export default function ForumPage() {
         : `http://127.0.0.1:8000/forum/posts/${postId}/downvote/`;
 
     axios
-      .post(
-        url,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      )
+      .post(url, {}, { headers: { Authorization: `Bearer ${token}` } })
       .then((response) => {
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
@@ -117,7 +137,7 @@ export default function ForumPage() {
               🔍
             </button>
           </form>
-          {/* бутон за отваряне на CreatePost */}
+          {/* Бутон за отваряне на CreatePost */}
           <button
             className="bg-safety-orange text-white px-4 py-2 rounded-lg"
             onClick={openPost}
@@ -146,14 +166,12 @@ export default function ForumPage() {
               </p>
             </div>
             <div className="flex gap-4 text-sm">
-              {/* Upvote Button */}
               <button
                 className="text-green-600 hover:text-green-800"
                 onClick={() => handleVote(post.id, "upvote")}
               >
                 👍 {post.upvotes}
               </button>
-              {/* Downvote Button */}
               <button
                 className="text-red-600 hover:text-red-800"
                 onClick={() => handleVote(post.id, "downvote")}
@@ -181,29 +199,20 @@ export default function ForumPage() {
           Категории
         </h2>
         <ul className="dark:bg-d-rich-black h-full overflow-y-auto custom-scrollbar p-4 space-y-2 flex flex-col">
-          {[
-            { id: "blank", title: "blank" },
-            { id: "general-medicine", title: "Обща медицина" },
-            { id: "specialized-medicine", title: "Специализирана медицина" },
-            { id: "symptoms-diseases", title: "Симптоми и заболявания" },
-            { id: "medications-treatment", title: "Лекарства и лечение" },
-            { id: "surgery-procedures", title: "Хирургия и процедури" },
-            { id: "healthy-lifestyle", title: "Здравословен живот" },
-            { id: "pregnancy-children", title: "Бременност и детско здраве" },
-            { id: "sexual-health", title: "Полово и урологично здраве" },
-            { id: "mental-health", title: "Психично здраве" },
-            { id: "infectious-diseases", title: "Инфекциозни болести" },
-            { id: "doctors-hospitals", title: "Лекари и болници" },
-          ].map((topic) => (
-            <li key={topic.id}>
-              <a
-                href={`#${topic.id}`}
-                className="block p-2 rounded-lg hover:bg-blue-100 text-brandeis-blue"
-              >
-                {topic.title}
-              </a>
-            </li>
-          ))}
+          {Array.isArray(categories) && categories.length > 0 ? (
+            categories.map((category) => (
+              <li key={category.id}>
+                <a
+                  href={`#${category.id}`}
+                  className="block p-2 rounded-lg hover:bg-blue-100 text-brandeis-blue"
+                >
+                  {category.name}
+                </a>
+              </li>
+            ))
+          ) : (
+            <li className="p-2 text-gray-500">Няма налични категории</li>
+          )}
         </ul>
       </div>
     </main>

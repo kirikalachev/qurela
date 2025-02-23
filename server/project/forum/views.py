@@ -7,6 +7,12 @@ from django.db.models import F
 from .models import Post, Comment, SavedPost, Vote, Category
 from .serializers import PostSerializer, CommentSerializer, SavedPostSerializer, VoteSerializer, CategorySerializer
 
+@api_view(["GET"])
+def category_list(request):
+    categories = Category.objects.all()
+    serializer = CategorySerializer(categories, many=True)
+    return Response(serializer.data)
+
 # List all posts or create a new post
 @api_view(["GET", "POST"])
 def post_list(request):

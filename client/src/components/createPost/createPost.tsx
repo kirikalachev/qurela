@@ -1,10 +1,11 @@
-// forum/createPost.tsx
+//old code
 'use client';
 
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useCreatePost } from "@/context/CreatePostContext";
 import CustomSelect from "@/components/createPost/customSelect"; // assuming your select component is exported from selectOption.tsx
+import Cookies from "js-cookie";
 
 export default function CreatePost() {
   const { isOpen, closePost } = useCreatePost();
@@ -30,7 +31,7 @@ export default function CreatePost() {
     setLoading(true);
     setError(null);
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token"); // Get the token from Cookies
     if (!token) {
       window.location.href = "/auth/signin";
       return;
