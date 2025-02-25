@@ -12,9 +12,11 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const router = useRouter();
   
-  // Check for token on page load
+
+  const router = useRouter();
+
+  // Проверка за наличието на токен при зареждане на страницата
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -24,8 +26,129 @@ export default function Home() {
 
   const ChatComponent = () => {
     const [showCopyText, setShowCopyText] = useState(false);
+    // Съхраняване на запазените разговори от backend
+    const [savedChats, setSavedChats] = useState<any[]>([]);
+    // Състояние за текущия разговор и неговите съобщения
+    const [currentConversation, setCurrentConversation] = useState<any>(null);
+    const [conversationMessages, setConversationMessages] = useState<any[]>([]);
+    // Състояния за текстовото поле, избрания режим, отговора, зареждането и грешките
+    const [inputText, setInputText] = useState('');
+    const [selectedMode, setSelectedMode] = useState('Проверка на информация');
+    const [response, setResponse] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    // Function to copy text
+    const handleDownload = () => {
+      // Проверяваме дали има вход и изход
+      const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
+      const outputContent = response ? `Output: ${response}` : "Output: (няма наличен отговор)";
+    
+      // Създаваме съдържание за файла
+      const content = `${inputContent}\n\n${outputContent}`;
+    
+      // Създаваме Blob обект с текстово съдържание
+      const blob = new Blob([content], { type: "text/plain" });
+    
+      // Създаваме URL за Blob
+      const url = window.URL.createObjectURL(blob);
+    
+      // Създаваме временно <a> за изтегляне
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "chat_output.txt"; // Име на файла
+      document.body.appendChild(a);
+      a.click();
+    
+      // Почистване на URL и премахване на елемента
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    };
+
+    // Функция за преименуване на разговор
+    const renameConversation = async (conversationId: number) => {
+      const newName = prompt("Въведете новото име на разговора:");
+      if (!newName) return;
+    
+      const token = Cookies.get("token");
+      if (!token) return;
+    
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/conversations/${conversationId}/rename/`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: newName })
+        });
+    
+        if (!res.ok) throw new Error("Грешка при преименуването.");
+    
+        // Актуализираме локално списъка със запазени чатове
+        setSavedChats(prevChats =>
+          prevChats.map(chat =>
+            chat.id === conversationId ? { ...chat, name: newName } : chat
+          )
+        );
+    
+        alert("Разговорът е преименуван успешно!");
+      } catch (err) {
+        console.error("Неуспешно преименуване:", err);
+      }
+    };
+
+    // Извличане на запазените разговори при монтиране на компонента
+    useEffect(() => {
+      const token = Cookies.get("token");
+      if (!token) return;
+      fetch('http://127.0.0.1:8000/api/conversations/', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          setSavedChats(data);
+        })
+        .catch(err => {
+          console.error("Error fetching conversations:", err);
+        });
+    }, []);
+
+    // Зареждане на конкретен разговор по неговото ID
+    const loadConversation = (conversationId: number) => {
+      const token = Cookies.get("token");
+      if (!token) return;
+
+      fetch(`http://127.0.0.1:8000/api/conversations/${conversationId}/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log("Loaded conversation data:", data);
+
+          // Проверяваме дали data е масив или съдържа масив messages
+          const messages = Array.isArray(data) ? data : data.messages || [];
+          
+          // Намираме последното съобщение от потребителя
+          const lastUserMessage = messages.slice().reverse().find(msg => msg.sender === 'user');
+          const lastBotMessage = messages.find(msg => msg.sender === 'bot');
+
+          setInputText(lastUserMessage ? lastUserMessage.text : '');
+          setResponse(lastBotMessage ? lastBotMessage.text : '');
+          setConversationMessages(messages);
+          setCurrentConversation(data);
+        })
+        .catch(err => {
+          console.error("Error loading conversation:", err);
+        });
+    };
+
+    // Функция за копиране на текст
     const handleCopyText = () => {
       const element = document.querySelector('.copy-text');
       if (element && element.textContent) {
@@ -38,16 +161,32 @@ export default function Home() {
       }
     };
 
-    // Example list of chats – later load dynamically from the backend
-    const chatItems = [
-      "Какви са симптомите на диабет тип 2 и как се диагностицира?",
-      "Каква е разликата между вирусна и бактериална инфекция?",
-      "Какви са основните рискови фактори за сърдечно-съдови заболявания?",
-      "Какво е значение на имунната система и какво може да я отслаби?",
-    ];
+    // Функция за изтриване на кореспонденция
+    const handleDeleteConversation = async (conversationId: number) => {
+      const token = Cookies.get("token");
+      if (!token) return;
 
-    // Component for individual chat items with options
-    const ChatItem = ({ item, index }: { item: string; index: number }) => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/conversations/${conversationId}/delete/`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('Не може да се изтрие кореспонденцията');
+        }
+
+        // Актуализиране на списъка със запазени чатове
+        setSavedChats(prevChats => prevChats.filter(chat => chat.id !== conversationId));
+        alert('Кореспонденцията беше изтрита успешно!');
+      } catch (err) {
+        console.error("Error deleting conversation:", err);
+        alert('Грешка при изтриване на кореспонденцията');
+      }
+    };
+
+    // Компонент за елемент от списъка с чатове
+    const ChatItem = ({ conversation }: { conversation: any }) => {
       const [open, setOpen] = useState(false);
       const containerRef = useRef<HTMLLIElement>(null);
 
@@ -65,54 +204,54 @@ export default function Home() {
       }, []);
 
       const handleOptionClick = (option: string) => {
-        console.log(`Опция "${option}" избрана за чат елемент ${index}`);
+        if (option === "Изтриване") {
+          handleDeleteConversation(conversation.id);
+        }
+        console.log(`Опция "${option}" избрана за чат ${conversation.id}`);
         setOpen(false);
       };
 
       return (
         <li
           ref={containerRef}
-          className="relative p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-100 transition-all 0.5s dark:hover:bg-d-gunmetal group m-0 basis-[55px] flex items-center"
+          onClick={() => loadConversation(conversation.id)}
+          className="relative p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-100 transition-all duration-500 dark:hover:bg-d-gunmetal group m-0 flex items-center justify-between cursor-pointer"
         >
-          <span>{item}</span>
-          {/* Gradient overlay on hover */}
-          <span
-            className="h-full w-[20%] absolute top-0 right-0
-                       bg-gradient-to-r from-transparent via-white to-white
-                       group-hover:from-transparent group-hover:via-gray-100 group-hover:to-gray-100
-                       transition-all 0.5s 
-                       dark:bg-gradient-to-r dark:from-transparent dark:via-d-rich-black dark:to-d-rich-black
-                       dark:group-hover:from-transparent dark:group-hover:via-d-gunmetal dark:group-hover:to-d-gunmetal"
-          ></span>
-          {/* Options button */}
+          <div>
+            <span className="font-semibold">Chat #{conversation.id}</span>
+            <br />
+            <span className="text-xs text-gray-500">
+              {new Date(conversation.created_at).toLocaleString()}
+            </span>
+          </div>
+          {/* Бутона за опции */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setOpen(!open);
             }}
-            className="h-full aspect-square absolute top-0 right-0 flex justify-center items-center"
+            className="h-8 w-8 flex justify-center items-center"
             title="Опции"
           >
             <OptionsButton />
           </button>
-          {/* Dropdown menu */}
           {open && (
-            <ul className="dark:bg-d-rich-black bg-Anti-flash-white w-[150px] h-fit p-2 absolute top-[70%] left-[45%] md:left-[90%] z-[170] rounded-xl">
+            <ul className="fixed z-[12] dark:bg-d-rich-black bg-Anti-flash-white w-[150px] h-fit p-2 absolute top-full right-0 z-[170] rounded-xl">
               <li
                 onClick={() => handleOptionClick("Изтегляне")}
-                className="p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
+                className="z-[12] p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
               >
                 Изтегляне
               </li>
               <li
-                onClick={() => handleOptionClick("Преименуване")}
+                onClick={() => renameConversation(conversation.id)}
                 className="p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
               >
                 Преименуване
               </li>
               <li
                 onClick={() => handleOptionClick("Изтриване")}
-                className="p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
+                className="z-[12] p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
               >
                 Изтриване
               </li>
@@ -122,27 +261,20 @@ export default function Home() {
       );
     };
 
-    // States for input text, selected mode, response, loading, and errors
-    const [inputText, setInputText] = useState('');
-    const [selectedMode, setSelectedMode] = useState('Проверка на информация');
-    const [response, setResponse] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    // Form submission handler
+    // Обработчик на формата за изпращане на съобщение
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setLoading(true);
       setError('');
       setResponse('');
-    
+
       const token = Cookies.get("token");
       if (!token) {
         setError("Не сте влезли в системата. Моля, влезте.");
         setLoading(false);
         return;
       }
-    
+
       try {
         const res = await fetch('http://127.0.0.1:8000/api/conversations/send/', {
           method: 'POST',
@@ -151,17 +283,17 @@ export default function Home() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            message: inputText, // Updated payload key to match backend
+            message: inputText,
             mode: selectedMode
           })
         });
-    
+
         const data = await res.json();
-    
+
         if (!res.ok) {
           throw new Error(data.error || `Грешка: ${res.status}`);
         }
-    
+
         setResponse(data.response);
       } catch (err: any) {
         console.error(err);
@@ -176,8 +308,9 @@ export default function Home() {
         {showCopyText && <CopyText />}
         <main className="flex items-center pt-12 min-h-[100vh]">
           <div className="flex w-[80%] h-[80vh] m-auto gap-7 items-stretched flex-wrap">
-            {/* Left section – input form and result display */}
+            {/* Ляв панел – детайли на разговора и формата за съобщение */}
             <div className="flex-[3] flex gap-6 flex-col">
+              {/* Формата за изпращане на ново съобщение */}
               <form onSubmit={handleSubmit} className="flex flex-col rounded-xl flex-[4] bg-white dark:bg-d-rich-black">
                 <textarea
                   placeholder="Съобщение до Qurela"
@@ -224,9 +357,8 @@ export default function Home() {
                     {error ? `Грешка: ${error}` : response || 'Тук ще се появи отговорът от сървъра.'}
                   </span>
                 </p>
-
                 <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
-                  <div className="flex items-center cursor-pointer">
+                  <div onClick={handleDownload} className="flex items-center cursor-pointer">
                     <Image src={Download} alt="Изтегляне" />
                     <span>Изтегляне</span>
                   </div>
@@ -238,15 +370,19 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right section – chat history */}
+            {/* Десен панел – история на чатове */}
             <div className="flex-[2] bg-white rounded-2xl dark:bg-d-rich-black">
               <h3 className="w-full bg-jordy-blue px-3 py-2 font-semibold text-base rounded-tl-2xl rounded-tr-2xl">
                 Последни чатове
               </h3>
-              <ul className="text-sm m-0 flex flex-col cursor-pointer dark:text-d-cadet-gray">
-                {chatItems.map((item, index) => (
-                  <ChatItem key={index} item={item} index={index} />
-                ))}
+              <ul className="text-sm m-0 flex flex-col cursor-pointer dark:text-d-cadet-gray overflow-y-auto h-[70vh]">
+                {savedChats.length > 0 ? (
+                  savedChats.map((conversation) => (
+                    <ChatItem key={conversation.id} conversation={conversation} />
+                  ))
+                ) : (
+                  <li className="p-2 text-center">Няма запазени чатове</li>
+                )}
               </ul>
             </div>
           </div>

@@ -10,6 +10,33 @@ import json
 import requests
 WHO_API_BASE_URL = "https://apps.who.int/gho/athena/api/"
 
+class ConversationRenameAPIView(APIView):
+    """Rename a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        new_name = request.data.get('name')
+
+        if not new_name:
+            return Response({'error': 'New name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation.name = new_name
+        conversation.save()
+
+        return Response({'message': 'Conversation renamed successfully'}, status=status.HTTP_200_OK)
+
+
+class ConversationDeleteAPIView(APIView):
+    """Delete a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        conversation.delete()  # Изтрива кореспонденцията
+        return Response({'message': 'Conversation deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
 class ConversationListAPIView(APIView):
     """Retrieve all conversations for the authenticated user."""
     permission_classes = [IsAuthenticated]
