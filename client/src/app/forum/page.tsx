@@ -5,6 +5,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import CreateComment from "@/components/createComment"; 
+
+interface Comment {
+  id: number;
+  content: string;
+  author: string;
+  created_at: string;
+}
 
 interface Post {
   id: number;
@@ -15,6 +23,7 @@ interface Post {
   upvotes: number;
   downvotes: number;
   category: string; // добавено поле за темата
+  comments?: Comment[]; // include comments fetched from the backend
 }
 
 interface Category {
@@ -25,12 +34,33 @@ interface Category {
 export default function ForumPage() {
   const { openPost } = useCreatePost();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]); // Ensure it's an array by default
+  // Maintain all posts separately so that search filtering doesn’t lose data
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // New state for holding the search query text
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const router = useRouter();
 
-  // Fetch posts
+  // Helper function to fetch comments for a given postId
+  const fetchComments = async (postId: number, token: string): Promise<Comment[]> => {
+    try {
+      const response = await axios.get(
+        `http://127.0.0.1:8000/forum/posts/${postId}/comments/`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
+      return response.data;
+    } catch (err) {
+      console.error(`Error fetching comments for post ${postId}:`, err);
+      return [];
+    }
+  };
+
+  // Fetch posts and then fetch comments for each post
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -44,8 +74,17 @@ export default function ForumPage() {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
-      .then((response) => {
-        setPosts(response.data);
+      .then(async (response) => {
+        const postsData: Post[] = response.data;
+        // For each post, fetch its comments and attach them
+        const postsWithComments = await Promise.all(
+          postsData.map(async (post) => {
+            const comments = await fetchComments(post.id, token);
+            return { ...post, comments };
+          })
+        );
+        setPosts(postsWithComments);
+        setAllPosts(postsWithComments);
         setLoading(false);
       })
       .catch((error) => {
@@ -71,7 +110,6 @@ export default function ForumPage() {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((response) => {
-        // Check if the response is an array
         if (Array.isArray(response.data)) {
           setCategories(response.data);
         } else {
@@ -83,35 +121,85 @@ export default function ForumPage() {
       });
   }, [router]);
 
-  const handleVote = (postId: number, type: "upvote" | "downvote") => {
+  // New search handler that filters posts based on the title (heading)
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (searchQuery.trim() === '') {
+      // If search query is empty, show all posts
+      setPosts(allPosts);
+    } else {
+      const filtered = allPosts.filter(post =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setPosts(filtered);
+    }
+  };
+
+  const handleVote = async (postId: number, type: "upvote" | "downvote") => {
     const token = Cookies.get("token");
     if (!token) return;
-
+  
+    // Optimistic UI update
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              upvotes: type === "upvote" ? (post.upvotes ?? 0) + 1 : post.upvotes,
+              downvotes: type === "downvote" ? (post.downvotes ?? 0) + 1 : post.downvotes,
+            }
+          : post
+      )
+    );
+  
     const url =
       type === "upvote"
         ? `http://127.0.0.1:8000/forum/posts/${postId}/upvote/`
         : `http://127.0.0.1:8000/forum/posts/${postId}/downvote/`;
-
-    axios
-      .post(url, {}, { headers: { Authorization: `Bearer ${token}` } })
-      .then((response) => {
-        setPosts((prevPosts) =>
-          prevPosts.map((post) =>
-            post.id === postId
-              ? {
-                  ...post,
-                  upvotes: response.data.upvotes,
-                  downvotes: response.data.downvotes,
-                }
-              : post
-          )
-        );
-      })
-      .catch((error) => {
-        console.error("Грешка при гласуване:", error);
+  
+    try {
+      await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+  
+      // Fetch the latest posts from the backend
+      const response = await axios.get(`http://127.0.0.1:8000/forum/posts/`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
+  
+      // Merge new posts data while keeping existing comments
+      const updatedPosts = response.data.map((newPost: Post) => {
+        const oldPost = allPosts.find((p) => p.id === newPost.id);
+        return {
+          ...newPost,
+          comments: oldPost?.comments ?? [],
+        };
+      });
+      setAllPosts(updatedPosts);
+      // If a search query is active, filter the updated posts accordingly
+      if (searchQuery.trim() !== '') {
+        setPosts(updatedPosts.filter(post =>
+          post.title.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
+      } else {
+        setPosts(updatedPosts);
+      }
+    } catch (error) {
+      console.error("Грешка при гласуване:", error);
+  
+      // Rollback state if request fails
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                upvotes: type === "upvote" ? Math.max((post.upvotes ?? 1) - 1, 0) : post.upvotes,
+                downvotes: type === "downvote" ? Math.max((post.downvotes ?? 1) - 1, 0) : post.downvotes,
+              }
+            : post
+        )
+      );
+    }
   };
-
+  
   if (loading) {
     return <p>Зареждане...</p>;
   }
@@ -124,11 +212,13 @@ export default function ForumPage() {
     <main className="pt-[10%] min-h-screen flex flex-col md:flex-row gap-6 p-6">
       <div className="md:w-2/3 flex flex-col gap-6">
         <div className="bg-white dark:bg-d-rich-black p-4 rounded-xl shadow-md flex items-center gap-4">
-          <form className="relative flex-grow flex items-center gap-2">
+          <form className="relative flex-grow flex items-center gap-2" onSubmit={handleSearch}>
             <input
               type="text"
               placeholder="Търси..."
               className="dark:bg-d-charcoal w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
             <button
               type="submit"
@@ -190,6 +280,51 @@ export default function ForumPage() {
               >
                 #{post.category}
               </Link>
+            </div>
+            {/* Display Comments Under Each Post */}
+            <div className="mt-4">
+              <h4 className="font-semibold mb-2">Коментари:</h4>
+              {post.comments && post.comments.length > 0 ? (
+                post.comments.map((comment) => (
+                  <div key={comment.id} className="border p-2 my-2 rounded">
+                    <p className="text-gray-800">{comment.content}</p>
+                    <p className="text-xs text-gray-500">
+                      От: {comment.author} • {new Date(comment.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">Няма коментари.</p>
+              )}
+            </div>
+            {/* Integrated Comment Creation */}
+            <div className="mt-4 border-t pt-4">
+              <CreateComment 
+                postId={post.id} 
+                onCommentAdded={(newComment) => {
+                  // Append the new comment to the post's comments locally
+                  setPosts((prevPosts) =>
+                    prevPosts.map((p) =>
+                      p.id === post.id
+                        ? {
+                            ...p,
+                            comments: p.comments ? [...p.comments, newComment] : [newComment],
+                          }
+                        : p
+                    )
+                  );
+                  setAllPosts((prevPosts) =>
+                    prevPosts.map((p) =>
+                      p.id === post.id
+                        ? {
+                            ...p,
+                            comments: p.comments ? [...p.comments, newComment] : [newComment],
+                          }
+                        : p
+                    )
+                  );
+                }} 
+              />
             </div>
           </div>
         ))}

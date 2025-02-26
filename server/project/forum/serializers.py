@@ -11,11 +11,14 @@ class PostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class CommentSerializer(serializers.ModelSerializer):
-    author = serializers.ReadOnlyField(source='author.username')
+    author = serializers.CharField(source="author.username", read_only=True)  # ✅ Returns username
 
     class Meta:
         model = Comment
-        fields = '__all__'
+        fields = ["id", "content", "author", "created_at"]
+
+
+
 
 class SavedPostSerializer(serializers.ModelSerializer):
     class Meta:

@@ -2,25 +2,30 @@
 
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const PopupNotification = () => {
   const closeTimeout = useRef<NodeJS.Timeout | null>(null);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("Потребителю");
 
   useEffect(() => {
+    const token = Cookies.get("token");
+
+    if (!token) {
+      console.warn("No token found, skipping user fetch.");
+      return;
+    }
+
     axios
       .get("http://127.0.0.1:8000/api/account/", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       })
       .then((response) => {
         setUsername(response.data.username || "Потребителю");
       })
       .catch((error) => {
-        console.error("Грешка при извличане на потребителското име:", error);
-        setUsername("Потребителю");
+        console.error("Error fetching user data:", error);
       });
   }, []);
 
@@ -49,9 +54,7 @@ const PopupNotification = () => {
 
   useEffect(() => {
     localStorage.setItem("popupShowed", "true");
-    setTimeout(() => {
-      showPopup();
-    }, 0);
+    setTimeout(showPopup, 0);
 
     return () => {
       if (closeTimeout.current) clearTimeout(closeTimeout.current);

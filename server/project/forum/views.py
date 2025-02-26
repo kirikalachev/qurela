@@ -13,11 +13,11 @@ def category_list(request):
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
-# List all posts or create a new post
+# List all posts with comments or create a new post
 @api_view(["GET", "POST"])
 def post_list(request):
     if request.method == "GET":
-        posts = Post.objects.all()
+        posts = Post.objects.prefetch_related("comments").all()
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
@@ -57,6 +57,25 @@ def post_detail(request, post_id):
         post.delete()
         return Response({"message": "Post deleted"}, status=status.HTTP_204_NO_CONTENT)
 
+# Fetch comments for a post
+@api_view(["GET"])
+def get_comments(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    comments = Comment.objects.filter(post=post).order_by("-created_at")
+    serializer = CommentSerializer(comments, many=True)
+    return Response(serializer.data)
+
+# Add a comment to a post
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def add_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    serializer = CommentSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(post=post, author=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # Save or remove a post from saved posts
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -74,7 +93,6 @@ def save_post(request, post_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_posts(request):
-    # Проверка дали потребителят е правилен
     print(f"User: {request.user}")
     published_posts = Post.objects.filter(author=request.user)
     saved_posts = SavedPost.objects.filter(user=request.user)
@@ -83,7 +101,6 @@ def user_posts(request):
         "published_posts": PostSerializer(published_posts, many=True).data,
         "saved_posts": SavedPostSerializer(saved_posts, many=True).data,
     })
-
 
 # Upvote a post
 @api_view(["POST"])
@@ -94,18 +111,15 @@ def upvote_post(request, post_id):
 
     if existing_vote:
         if existing_vote.vote_type == -1:
-            post.downvotes = F("downvotes") - 1
-            post.upvotes = F("upvotes") + 1
-            existing_vote.vote_type = 1
-            existing_vote.save()
+            Vote.objects.filter(user=request.user, post=post).update(vote_type=1)
+            Post.objects.filter(id=post_id).update(upvotes=F("upvotes") + 1, downvotes=F("downvotes") - 1)
         elif existing_vote.vote_type == 1:
-            post.upvotes = F("upvotes") - 1
             existing_vote.delete()
+            Post.objects.filter(id=post_id).update(upvotes=F("upvotes") - 1)
     else:
         Vote.objects.create(user=request.user, post=post, vote_type=1)
-        post.upvotes = F("upvotes") + 1
+        Post.objects.filter(id=post_id).update(upvotes=F("upvotes") + 1)
 
-    post.save()
     return Response({"message": "Upvote registered"}, status=status.HTTP_200_OK)
 
 # Downvote a post
@@ -117,28 +131,20 @@ def downvote_post(request, post_id):
 
     if existing_vote:
         if existing_vote.vote_type == 1:
-            post.upvotes = F("upvotes") - 1
-            post.downvotes = F("downvotes") + 1
-            existing_vote.vote_type = -1
-            existing_vote.save()
+            Vote.objects.filter(user=request.user, post=post).update(vote_type=-1)
+            Post.objects.filter(id=post_id).update(upvotes=F("upvotes") - 1, downvotes=F("downvotes") + 1)
         elif existing_vote.vote_type == -1:
-            post.downvotes = F("downvotes") - 1
             existing_vote.delete()
+            Post.objects.filter(id=post_id).update(downvotes=F("downvotes") - 1)
     else:
         Vote.objects.create(user=request.user, post=post, vote_type=-1)
-        post.downvotes = F("downvotes") + 1
+        Post.objects.filter(id=post_id).update(downvotes=F("downvotes") + 1)
 
-    post.save()
     return Response({"message": "Downvote registered"}, status=status.HTTP_200_OK)
 
-# Add a comment
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def add_comment(request, post_id):
+@api_view(["GET"])
+def get_comments(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    serializer = CommentSerializer(data=request.data)
-
-    if serializer.is_valid():
-        serializer.save(post=post, author=request.user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    comments = Comment.objects.filter(post=post)
+    serializer = CommentSerializer(comments, many=True)
+    return Response(serializer.data)

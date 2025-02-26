@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
@@ -12,11 +11,9 @@ import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  
-
   const router = useRouter();
 
-  // Проверка за наличието на токен при зареждане на страницата
+  // Check for token on page load
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -26,142 +23,104 @@ export default function Home() {
 
   const ChatComponent = () => {
     const [showCopyText, setShowCopyText] = useState(false);
-    // Съхраняване на запазените разговори от backend
     const [savedChats, setSavedChats] = useState<any[]>([]);
-    // Състояние за текущия разговор и неговите съобщения
     const [currentConversation, setCurrentConversation] = useState<any>(null);
     const [conversationMessages, setConversationMessages] = useState<any[]>([]);
-    // Състояния за текстовото поле, избрания режим, отговора, зареждането и грешките
     const [inputText, setInputText] = useState('');
     const [selectedMode, setSelectedMode] = useState('Проверка на информация');
     const [response, setResponse] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleDownload = () => {
-      // Проверяваме дали има вход и изход
-      const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
-      const outputContent = response ? `Output: ${response}` : "Output: (няма наличен отговор)";
-    
-      // Създаваме съдържание за файла
-      const content = `${inputContent}\n\n${outputContent}`;
-    
-      // Създаваме Blob обект с текстово съдържание
-      const blob = new Blob([content], { type: "text/plain" });
-    
-      // Създаваме URL за Blob
-      const url = window.URL.createObjectURL(blob);
-    
-      // Създаваме временно <a> за изтегляне
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "chat_output.txt"; // Име на файла
-      document.body.appendChild(a);
-      a.click();
-    
-      // Почистване на URL и премахване на елемента
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    };
-
-    // Функция за преименуване на разговор
-    const renameConversation = async (conversationId: number) => {
-      const newName = prompt("Въведете новото име на разговора:");
-      if (!newName) return;
-    
-      const token = Cookies.get("token");
-      if (!token) return;
-    
-      try {
-        const res = await fetch(`http://127.0.0.1:8000/api/conversations/${conversationId}/rename/`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ name: newName })
-        });
-    
-        if (!res.ok) throw new Error("Грешка при преименуването.");
-    
-        // Актуализираме локално списъка със запазени чатове
-        setSavedChats(prevChats =>
-          prevChats.map(chat =>
-            chat.id === conversationId ? { ...chat, name: newName } : chat
-          )
-        );
-    
-        alert("Разговорът е преименуван успешно!");
-      } catch (err) {
-        console.error("Неуспешно преименуване:", err);
-      }
-    };
-
-    // Извличане на запазените разговори при монтиране на компонента
+    // On mount, extract query parameters and (optionally) auto-submit
     useEffect(() => {
-      const token = Cookies.get("token");
-      if (!token) return;
-      fetch('http://127.0.0.1:8000/api/conversations/', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(res => res.json())
-        .then(data => {
-          setSavedChats(data);
-        })
-        .catch(err => {
-          console.error("Error fetching conversations:", err);
-        });
+      const params = new URLSearchParams(window.location.search);
+      const message = params.get("message");
+      const mode = params.get("mode");
+      if (message) {
+        setInputText(message);
+      }
+      if (mode) {
+        setSelectedMode(mode);
+      }
+      // Optionally, auto-submit if a message was passed
+      if (message) {
+        handleAutoSubmit(message, mode || selectedMode);
+      }
     }, []);
 
-    // Зареждане на конкретен разговор по неговото ID
-    const loadConversation = (conversationId: number) => {
+    // Function to automatically submit a chat message (extracted from query)
+    const handleAutoSubmit = async (message: string, mode: string) => {
+      setLoading(true);
+      setError('');
+      setResponse('');
       const token = Cookies.get("token");
-      if (!token) return;
-
-      fetch(`http://127.0.0.1:8000/api/conversations/${conversationId}/`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      })
-        .then(res => res.json())
-        .then(data => {
-          console.log("Loaded conversation data:", data);
-
-          // Проверяваме дали data е масив или съдържа масив messages
-          const messages = Array.isArray(data) ? data : data.messages || [];
-          
-          // Намираме последното съобщение от потребителя
-          const lastUserMessage = messages.slice().reverse().find(msg => msg.sender === 'user');
-          const lastBotMessage = messages.find(msg => msg.sender === 'bot');
-
-          setInputText(lastUserMessage ? lastUserMessage.text : '');
-          setResponse(lastBotMessage ? lastBotMessage.text : '');
-          setConversationMessages(messages);
-          setCurrentConversation(data);
-        })
-        .catch(err => {
-          console.error("Error loading conversation:", err);
-        });
-    };
-
-    // Функция за копиране на текст
-    const handleCopyText = () => {
-      const element = document.querySelector('.copy-text');
-      if (element && element.textContent) {
-        navigator.clipboard.writeText(element.textContent)
-          .then(() => {
-            setShowCopyText(true);
-            setTimeout(() => setShowCopyText(false), 2000);
+      if (!token) {
+        setError("Не сте влезли в системата. Моля, влезте.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/conversations/send/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            message: message,
+            mode: mode
           })
-          .catch((err) => console.error("Failed to copy text: ", err));
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Грешка: ${res.status}`);
+        }
+        setResponse(data.response);
+      } catch (err: any) {
+        setError(err.message || 'Нещо се обърка.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Функция за изтриване на кореспонденция
+    // Normal form submission (if user makes edits and resubmits)
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setLoading(true);
+      setError('');
+      setResponse('');
+      const token = Cookies.get("token");
+      if (!token) {
+        setError("Не сте влезли в системата. Моля, влезте.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch('http://127.0.0.1:8000/api/conversations/send/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            message: inputText,
+            mode: selectedMode
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Грешка: ${res.status}`);
+        }
+        setResponse(data.response);
+      } catch (err: any) {
+        setError(err.message || 'Нещо се обърка.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Function to delete a conversation
     const handleDeleteConversation = async (conversationId: number) => {
       const token = Cookies.get("token");
       if (!token) return;
@@ -176,7 +135,7 @@ export default function Home() {
           throw new Error('Не може да се изтрие кореспонденцията');
         }
 
-        // Актуализиране на списъка със запазени чатове
+        // Update the saved chats list
         setSavedChats(prevChats => prevChats.filter(chat => chat.id !== conversationId));
         alert('Кореспонденцията беше изтрита успешно!');
       } catch (err) {
@@ -185,132 +144,29 @@ export default function Home() {
       }
     };
 
-    // Компонент за елемент от списъка с чатове
-    const ChatItem = ({ conversation }: { conversation: any }) => {
-      const [open, setOpen] = useState(false);
-      const containerRef = useRef<HTMLLIElement>(null);
-
-      useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-          if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-            setOpen(false);
-          }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-          document.removeEventListener("mousedown", handleClickOutside);
-        };
-      }, []);
-
-      const handleOptionClick = (option: string) => {
-        if (option === "Изтриване") {
-          handleDeleteConversation(conversation.id);
-        }
-        console.log(`Опция "${option}" избрана за чат ${conversation.id}`);
-        setOpen(false);
-      };
-
-      return (
-        <li
-          ref={containerRef}
-          onClick={() => loadConversation(conversation.id)}
-          className="relative p-2 border-b-gray-300 border-b-[2px] hover:bg-gray-100 transition-all duration-500 dark:hover:bg-d-gunmetal group m-0 flex items-center justify-between cursor-pointer"
-        >
-          <div>
-            <span className="font-semibold">Chat #{conversation.id}</span>
-            <br />
-            <span className="text-xs text-gray-500">
-              {new Date(conversation.created_at).toLocaleString()}
-            </span>
-          </div>
-          {/* Бутона за опции */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(!open);
-            }}
-            className="h-8 w-8 flex justify-center items-center"
-            title="Опции"
-          >
-            <OptionsButton />
-          </button>
-          {open && (
-            <ul className="fixed z-[12] dark:bg-d-rich-black bg-Anti-flash-white w-[150px] h-fit p-2 absolute top-full right-0 z-[170] rounded-xl">
-              <li
-                onClick={() => handleOptionClick("Изтегляне")}
-                className="z-[12] p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
-              >
-                Изтегляне
-              </li>
-              <li
-                onClick={() => renameConversation(conversation.id)}
-                className="p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
-              >
-                Преименуване
-              </li>
-              <li
-                onClick={() => handleOptionClick("Изтриване")}
-                className="z-[12] p-2 hover:bg-platinum-gray rounded-xl dark:hover:bg-d-gunmetal"
-              >
-                Изтриване
-              </li>
-            </ul>
-          )}
-        </li>
-      );
-    };
-
-    // Обработчик на формата за изпращане на съобщение
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setLoading(true);
-      setError('');
-      setResponse('');
-
+    // Displaying chat history (Последни чатове) fetched from the backend
+    useEffect(() => {
       const token = Cookies.get("token");
-      if (!token) {
-        setError("Не сте влезли в системата. Моля, влезте.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch('http://127.0.0.1:8000/api/conversations/send/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            message: inputText,
-            mode: selectedMode
-          })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || `Грешка: ${res.status}`);
+      if (!token) return;
+      fetch('http://127.0.0.1:8000/api/conversations/', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
+      })
+        .then(res => res.json())
+        .then(data => setSavedChats(data))
+        .catch(err => console.error("Error fetching conversations:", err));
+    }, []);
 
-        setResponse(data.response);
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || 'Нещо се обърка.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    // Render the chat interface
     return (
       <>
         {showCopyText && <CopyText />}
         <main className="flex items-center pt-12 min-h-[100vh]">
           <div className="flex w-[80%] h-[80vh] m-auto gap-7 items-stretched flex-wrap">
-            {/* Ляв панел – детайли на разговора и формата за съобщение */}
+            {/* Left Panel – Chat input and response */}
             <div className="flex-[3] flex gap-6 flex-col">
-              {/* Формата за изпращане на ново съобщение */}
               <form onSubmit={handleSubmit} className="flex flex-col rounded-xl flex-[4] bg-white dark:bg-d-rich-black">
                 <textarea
                   placeholder="Съобщение до Qurela"
@@ -346,7 +202,16 @@ export default function Home() {
                   </span>
                 </h3>
                 <button
-                  onClick={handleCopyText}
+                  onClick={() => {
+                    const element = document.querySelector('.copy-text');
+                    if (element && element.textContent) {
+                      navigator.clipboard.writeText(element.textContent)
+                        .then(() => {
+                          setShowCopyText(true);
+                          setTimeout(() => setShowCopyText(false), 2000);
+                        });
+                    }
+                  }}
                   className="absolute top-2 right-2 rounded-xl transition-all active:bg-gray-300 flex items-center justify-center w-8 h-8"
                   title="Копиране"
                 >
@@ -358,7 +223,21 @@ export default function Home() {
                   </span>
                 </p>
                 <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
-                  <div onClick={handleDownload} className="flex items-center cursor-pointer">
+                  <div onClick={() => {
+                    // Download functionality
+                    const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
+                    const outputContent = response ? `Output: ${response}` : "Output: (няма наличен отговор)";
+                    const content = `${inputContent}\n\n${outputContent}`;
+                    const blob = new Blob([content], { type: "text/plain" });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "chat_output.txt";
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                  }} className="flex items-center cursor-pointer">
                     <Image src={Download} alt="Изтегляне" />
                     <span>Изтегляне</span>
                   </div>
@@ -370,15 +249,41 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Десен панел – история на чатове */}
+            {/* Right Panel – Chat history */}
             <div className="flex-[2] bg-white rounded-2xl dark:bg-d-rich-black">
               <h3 className="w-full bg-jordy-blue px-3 py-2 font-semibold text-base rounded-tl-2xl rounded-tr-2xl">
                 Последни чатове
               </h3>
-              <ul className="text-sm m-0 flex flex-col cursor-pointer dark:text-d-cadet-gray overflow-y-auto h-[70vh]">
+              <ul className="text-sm m-0 flex flex-col dark:text-d-cadet-gray overflow-y-auto h-[70vh]">
                 {savedChats.length > 0 ? (
                   savedChats.map((conversation) => (
-                    <ChatItem key={conversation.id} conversation={conversation} />
+                    <li 
+                      key={conversation.id} 
+                      className="flex justify-between items-center p-2 border-b-[2px] border-gray-300 hover:bg-gray-100 dark:hover:bg-d-gunmetal"
+                      onClick={() => {
+                        console.log("Clicked conversation:", conversation);
+                        if (conversation.messages.length >= 2) {
+                          setInputText(conversation.messages[0].text);
+                          setResponse(conversation.messages[1].text);
+                        } else {
+                          setInputText('');
+                          setResponse('Все още няма отговор.');
+                        }
+                      }}
+                    >
+                      <span>
+                        Chat #{conversation.id} – {new Date(conversation.created_at).toLocaleString()}
+                      </span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteConversation(conversation.id);
+                        }} 
+                        title="Изтриване"
+                      >
+                        <Image src={Trash} alt="Изтриване" />
+                      </button>
+                    </li>
                   ))
                 ) : (
                   <li className="p-2 text-center">Няма запазени чатове</li>

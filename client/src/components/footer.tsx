@@ -7,7 +7,7 @@ export default function Footer() {
             <div className='flex-1'>
               <h2 className='text-2xl font-semibold'>Qurela</h2>
               <p className='w-[70%]'>
-              Unik е уеб приложение, което има за цел борба с дезинформацията в медицинската сфера
+              Qurela е уеб приложение, което има за цел борба с дезинформацията в медицинската сфера
               </p>
             </div>
   

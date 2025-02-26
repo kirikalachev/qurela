@@ -1,6 +1,6 @@
 "use client";
 import Link from 'next/link';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
@@ -9,9 +9,6 @@ const SignUp: React.FC = () => {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [verifyEmail, setVerifyEmail] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const router = useRouter();
 
@@ -26,47 +23,16 @@ const SignUp: React.FC = () => {
         email,
       });
       console.log('Registration success:', response.data);
-      setVerifyEmail(true); // Show OTP input
+
+      // If JWT tokens are returned, store the access token in a secure cookie
+      if (response.data.tokens && response.data.tokens.access) {
+        document.cookie = `token=${response.data.tokens.access}; path=/; Secure; SameSite=Strict`;
+        sessionStorage.setItem("showPopup", "true");
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.response?.data.error || 'Error during registration');
       console.error('Error during registration:', err.response?.data);
-    }
-  };
-
-  // Handle OTP input change
-  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = e.target.value;
-    if (/^[0-9]$/.test(value)) {
-      const updatedOtp = [...otp];
-      updatedOtp[index] = value;
-      setOtp(updatedOtp);
-
-      // Move to the next input if it's not the last one
-      if (index < otp.length - 1 && value !== '') {
-        inputRefs.current[index + 1]?.focus();
-      }
-    }
-  };
-
-  // Handle OTP submission
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (otp.every(digit => digit !== '')) {
-      try {
-        const otpValue = otp.join('');
-        console.log("Sending OTP:", otpValue);
-        const response = await axios.post('http://127.0.0.1:8000/api/verify_email/', {
-          email, // Ensure email is sent
-          code: otpValue,
-        });
-        console.log('OTP verification success:', response.data);
-        router.push('/auth/signin'); // Redirect to login after verification
-      } catch (err: any) {
-        setError(err.response?.data.error || 'Invalid verification code. Try again.');
-      }
-    } else {
-      setError('Please fill all OTP fields.');
     }
   };
 
@@ -91,76 +57,48 @@ const SignUp: React.FC = () => {
               </p>
             </div>
 
-            {verifyEmail ? (
-              <div className="w-full lg:w-1/2 p-6">
-                <h2 className="text-2xl font-semibold text-center">Верификация на имейл</h2>
-                <form className="mt-6" onSubmit={handleOtpSubmit}>
-                  <div className="flex justify-center gap-2">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        type="text"
-                        value={digit}
-                        onChange={(e) => handleOtpChange(e, index)}
-                        maxLength={1}
-                        className="w-10 h-10 text-center border rounded"
-                        ref={(el) => { inputRefs.current[index] = el; }}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-brandeis-blue text-white py-3 rounded mt-4 hover:bg-marian-blue"
-                  >
-                    Потвърдете код
-                  </button>
-                </form>
-                {error && <p className="text-red-500 mt-2">{error}</p>}
-              </div>
-            ) : (
-              <div className="w-full lg:w-1/2 p-6">
-                <h2 className="text-2xl font-semibold text-center">РЕГИСТРАЦИЯ</h2>
-                <form className="mt-6" onSubmit={handleSubmit}>
-                  <div className="mb-4">
-                    <input
-                      type="text"
-                      placeholder="Създайте потребителско име"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full border rounded p-3 focus:outline-teal-500"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
-                      type="email"
-                      placeholder="Въведете вашия имейл"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border rounded p-3 focus:outline-teal-500"
-                      required
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <input
-                      type="password"
-                      placeholder="Създайте парола"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full border rounded p-3 focus:outline-teal-500"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-brandeis-blue text-white py-3 rounded mt-4 hover:bg-marian-blue"
-                  >
-                    Регистрация
-                  </button>
-                </form>
-                {error && <p className="text-red-500 mt-2">{error}</p>}
-              </div>
-            )}
+            <div className="w-full lg:w-1/2 p-6">
+              <h2 className="text-2xl font-semibold text-center">РЕГИСТРАЦИЯ</h2>
+              <form className="mt-6" onSubmit={handleSubmit}>
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="Създайте потребителско име"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full border rounded p-3 focus:outline-teal-500"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <input
+                    type="email"
+                    placeholder="Въведете вашия имейл"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full border rounded p-3 focus:outline-teal-500"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <input
+                    type="password"
+                    placeholder="Създайте парола"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full border rounded p-3 focus:outline-teal-500"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="w-full bg-brandeis-blue text-white py-3 rounded mt-4 hover:bg-marian-blue"
+                >
+                  Регистрация
+                </button>
+              </form>
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+            </div>
           </div>
         </div>
       </div>

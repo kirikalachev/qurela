@@ -9,6 +9,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import random
 from django.contrib.auth import get_user_model
 
+User = get_user_model()
+
 # Generate JWT tokens
 def get_tokens_for_user(user):
     refresh = RefreshToken.for_user(user)
@@ -16,9 +18,6 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token)
     }
-
-
-User = get_user_model()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -32,20 +31,15 @@ def signup(request):
     if User.objects.filter(email=email).exists():
         return Response({'error': 'Email already registered'}, status=400)
 
-    verification_code = random.randint(1000, 9999)
-
-    user = User.objects.create_user(username=username, email=email, password=password, is_active=False)
-    user.email_verification_code = verification_code
+    # Create the user as active (no email verification required)
+    user = User.objects.create_user(username=username, email=email, password=password, is_active=True)
     user.save()
 
-    send_mail(
-        'Verify your email',
-        f'Your verification code is {verification_code}',
-        settings.EMAIL_HOST_USER,
-        [email]
-    )
+    # Generate JWT tokens for the new user
+    tokens = get_tokens_for_user(user)
 
-    return Response({'message': 'User registered. Check email for verification code.'})
+    return Response({'message': 'User registered successfully', 'tokens': tokens})
+
 
 
 @api_view(['POST'])
@@ -84,11 +78,31 @@ def signout(request):
     return response
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
 def account(request):
     user = request.user
+
+    if request.method == 'PUT':
+        username = request.data.get('username', user.username)
+        name = request.data.get('name', user.get_full_name())
+        profile_pic = request.data.get('profilePic')
+
+        if User.objects.exclude(id=user.id).filter(username=username).exists():
+            return Response({'error': 'Username already taken'}, status=400)
+
+        user.username = username
+        user.first_name = name.split()[0] if " " in name else name
+        user.last_name = name.split()[1] if " " in name else ""
+        
+        if profile_pic:
+            user.profile_pic = profile_pic  # Assuming `profile_pic` is a field in your User model
+
+        user.save()
+        return Response({'message': 'Profile updated successfully'})
+
     return Response({'username': user.username, 'email': user.email})
+
 
 @api_view(['POST'])
 @permission_classes([AllowAny])

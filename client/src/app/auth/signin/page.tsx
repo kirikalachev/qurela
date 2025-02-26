@@ -95,9 +95,9 @@ const SignIn: React.FC = () => {
               {error && <p className="text-red-500 text-center mt-2">{error}</p>}
               <div className="text-center mt-4">
                 Нямате акаунт?{' '}
-                <a href="#" className="text-brandeis-blue font-semibold">
+                <Link href="/auth/signup" className="text-brandeis-blue font-semibold">
                   Регистрация
-                </a>
+                </Link>
               </div>
             </div>
           </div>

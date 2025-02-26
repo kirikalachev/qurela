@@ -10,5 +10,7 @@ urlpatterns = [
     path("posts/<int:post_id>/downvote/", views.downvote_post, name="downvote_post"),
     path("posts/<int:post_id>/comment/", views.add_comment, name="add_comment"),
     path("categories/", views.category_list, name="category_list"),
+    path("posts/<int:post_id>/comments/", views.get_comments, name="get_comments"),
+
     
 ]

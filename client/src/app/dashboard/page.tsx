@@ -21,9 +21,12 @@ interface Post {
 export default function Dashboard() {
   const [showPopup, setShowPopup] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
-  const [inputValue, setInputValue] = useState('Проверка на информация');
-  const [protectedData, setProtectedData] = useState<any>(null);
+  const [selectedMode, setSelectedMode] = useState('Проверка на информация');
+  const [message, setMessage] = useState('');
+  // New state to hold conversation history
+  const [conversations, setConversations] = useState<any[]>([]);
 
+  // Show popup on first load if not shown before
   useEffect(() => {
     const popupShowed = localStorage.getItem("popupShowed");
     if (!popupShowed) {
@@ -31,10 +34,10 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Load forum posts from the backend
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) return;
-
     axios
       .get("http://127.0.0.1:8000/forum/posts/", {
         headers: { Authorization: `Bearer ${token}` },
@@ -47,84 +50,65 @@ export default function Dashboard() {
       });
   }, []);
 
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setInputValue(e.target.value);
-  };
-
-  const handleVote = (postId: number, type: "upvote" | "downvote") => {
+  // Load chat history (conversations) from the backend
+  useEffect(() => {
     const token = Cookies.get("token");
     if (!token) return;
-  
-    // Keep track of the previous vote values before making a change
-    const previousPosts = [...posts];
-  
-    // Local update for instant feedback
-    setPosts((prevPosts) =>
-      prevPosts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              upvotes: type === "upvote" ? post.upvotes + 1 : post.upvotes,
-              downvotes: type === "downvote" ? post.downvotes + 1 : post.downvotes,
-            }
-          : post
-      )
-    );
-  
-    const url =
-      type === "upvote"
-        ? `http://127.0.0.1:8000/forum/posts/${postId}/upvote/`
-        : `http://127.0.0.1:8000/forum/posts/${postId}/downvote/`;
-  
-    // Send the vote request to the server
     axios
-    .post(url, {}, { headers: { Authorization: `Bearer ${token}` } })
-    .then((response) => {
-      console.log("Vote response:", response.data);
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                upvotes: response.data.upvotes,
-                downvotes: response.data.downvotes,
-              }
-            : post
-        )
-      );
-    })
-  
-  };
-  
-  
-  
+      .get("http://127.0.0.1:8000/api/conversations/", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((response) => {
+        // Reverse so that newest conversations appear first
+        setConversations(response.data.reverse());
+      })
+      .catch((error) => {
+        console.error("Грешка при зареждане на разговори:", error);
+      });
+  }, []);
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMode(e.target.value);
+  };
+
+  // Redirect to the assistant page with query parameters for message and mode
   const redirectToAssistant = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    window.location.href = '/assistant';
+    const queryParams = new URLSearchParams();
+    queryParams.append("message", message);
+    queryParams.append("mode", selectedMode);
+    window.location.href = `/assistant?${queryParams.toString()}`;
   };
 
   return (
     <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center">
       {showPopup && <PopupNotification />}
-      <h2 className="dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">{inputValue}</h2>
+      <h2 className="dark:text-d-cadet-gray text-2xl md:text-3xl font-bold">{selectedMode}</h2>
       <div className="flex justify-center items-center flex-col w-full">
         <form
           className="dark:bg-d-rich-black bg-white flex justify-between md:justify-center items-center w-[90%] h-fit md:w-[55%] md:h-[55px] m-[1vh] p-[7px] rounded-2xl md:rounded-full md:flex-nowrap flex-wrap"
           onSubmit={redirectToAssistant}
         >
+          {/* For mobile view */}
           <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Съобщение до Qurela"
             className="flex-[100%] md:hidden outline-none w-full h-[120px] px-1 text-basis whitespace-nowrap overflow-hidden"
           />
           <select
-            className="p-2 md:h-[100%] dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
+            value={selectedMode}
             onChange={handleSelectChange}
+            className="p-2 md:h-[100%] dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
           >
             <option value="Проверка на информация">Проверка</option>
             <option value="Задайте въпрос">Въпрос</option>
             <option value="Обобщи информация">Обобщение</option>
           </select>
+          {/* For desktop view */}
           <input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             className="outline-none w-full max-h-6 px-1 text-basis hidden md:block bg-transparent dark:text-d-cadet-gray"
             placeholder="Съобщение до Qurela"
             autoFocus
@@ -133,29 +117,36 @@ export default function Dashboard() {
             className="p-2 md:h-[100%] aspect-square bg-marian-blue rounded-full flex justify-center items-center cursor-pointer"
             title="Изпращане"
           >
-            <Image src={ArrowRight} alt=" " />
+            <Image src={ArrowRight} alt="Изпращане" />
           </button>
         </form>
       </div>
 
-      {protectedData && (
-        <div className="w-[90%] p-4 bg-white rounded shadow-md">
-          <h3 className="text-xl font-semibold">Protected Data</h3>
-          <pre>{JSON.stringify(protectedData, null, 2)}</pre>
-        </div>
-      )}
-
+      {/* Dashboard sections: Chat History and Editor Selection */}
       <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60">
+        {/* Chat History Section */}
         <div className="bg-platinum-gray dark:bg-d-rich-black rounded-2xl flex-[4] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-jordy-blue p-3 font-semibold text-base">Последни чатове</h3>
           <ul className="p-3 text-sm">
-            <li className='dark:text-d-cadet-gray'>Какви са симптомите на диабет тип 2 и как се диагностицира?</li>
-            <li className='dark:text-d-cadet-gray'>Каква е разликата между вирусна и бактериална инфекция?</li>
-            <li className='dark:text-d-cadet-gray'>Какви са основните рискови фактори за сърдечно-съдови заболявания?</li>
-            <li className='dark:text-d-cadet-gray'>Какво е значение на имунната система и какво може да я отслаби?</li>
+            {conversations.length > 0 ? (
+              conversations.map((conv) => (
+                <Link key={conv.id} href={`/assistant?conversationId=${conv.id}`}>
+                  <li className="dark:text-d-cadet-gray mb-2 cursor-pointer">
+                    <span className="font-semibold">{conv.name || `Чат #${conv.id}`}</span>
+                    <br />
+                    <span className="text-xs text-gray-500">
+                      {new Date(conv.created_at).toLocaleString()}
+                    </span>
+                  </li>
+                </Link>
+              ))
+            ) : (
+              <li className="dark:text-d-cadet-gray">Няма запазени чатове</li>
+            )}
           </ul>
         </div>
 
+        {/* Editor Selection Section */}
         <div className="flex flex-col bg-platinum-gray dark:bg-d-rich-black rounded-2xl flex-[3] overflow-hidden flex-1">
           <h3 className="w-[100%] bg-brandeis-blue p-3 text-white font-semibold text-base">Избор на редактора</h3>
           <span className="w-full h-[100%] flex justify-center items-center">
@@ -184,13 +175,13 @@ export default function Dashboard() {
             <div className="flex gap-4 text-sm">
               <button
                 className="text-green-600 hover:text-green-800"
-                onClick={() => handleVote(post.id, "upvote")}
+                onClick={() => console.log("Upvote", post.id)}
               >
                 👍 {post.upvotes}
               </button>
               <button
                 className="text-red-600 hover:text-red-800"
-                onClick={() => handleVote(post.id, "downvote")}
+                onClick={() => console.log("Downvote", post.id)}
               >
                 👎 {post.downvotes}
               </button>

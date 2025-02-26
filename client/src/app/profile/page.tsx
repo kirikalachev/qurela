@@ -8,21 +8,14 @@ import Cookies from "js-cookie";
 interface ProfileData {
   username: string;
   email: string;
-  name: string;
-  profilePic: string | null; 
+  first_name: string;
+  last_name: string;
+  profilePic: string | null;
 }
 
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  created_at: string;
-}
 
 const Profile = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -30,14 +23,11 @@ const Profile = () => {
 
   useEffect(() => {
     const token = Cookies.get("token");
-
     if (!token) {
-      console.error("Няма токен, пренасочване към вход...");
       router.push("/auth/signin");
       return;
     }
-
-    // Fetch profile data
+  
     axios
       .get("http://127.0.0.1:8000/api/account/", {
         headers: { Authorization: `Bearer ${token}` },
@@ -45,42 +35,17 @@ const Profile = () => {
       })
       .then((response) => {
         setProfileData(response.data);
+        setLoading(false);
       })
       .catch((error) => {
-        console.error("Грешка при извличане на данни за профила:", error);
-        setError(
-          error.response?.data?.detail ||
-            "Неуспешно извличане на данни за профила."
-        );
+        setError(error.response?.data?.detail || "Failed to fetch profile data.");
         if (error.response?.status === 401) {
           router.push("/auth/signin");
         }
+        setLoading(false);
       });
-
-    // Fetch user's posts
-// Fetch user's posts
-axios
-  .get("http://127.0.0.1:8000/my_posts/", {
-    headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-  })
-  .then((response) => {
-    console.log(response.data);  // Проверка на отговор
-    setUserPosts(response.data.published_posts);
-    setLoading(false);
-  })
-  .catch((error) => {
-    console.error("Error fetching user posts:", error);
-    setError(
-      error.response?.data?.detail || "Неуспешно зареждане на публикациите."
-    );
-    if (error.response?.status === 401) {
-      router.push("/auth/signin");
-    }
-    setLoading(false);
-  });
-
   }, [router]);
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,6 +53,7 @@ axios
       setProfileData({ ...profileData, [name]: value });
     }
   };
+  
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -98,146 +64,111 @@ axios
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const token = Cookies.get("token");
-    if (!token) {
-      router.push("/auth/signin");
-      return;
+    if (!token || !profileData) {
+        router.push("/auth/signin");
+        return;
     }
-
+  
     const formData = new FormData();
-    formData.append("email", profileData!.email);
-    formData.append("name", profileData!.name);
-    formData.append("username", profileData!.username);
+    formData.append("email", profileData.email);
+    formData.append("first_name", profileData.first_name);
+    formData.append("last_name", profileData.last_name);
+    formData.append("username", profileData.username);
     if (selectedFile) {
-      formData.append("profilePic", selectedFile);
+        formData.append("profilePic", selectedFile);
     }
-
+  
     try {
-      const response = await axios.put(
-        "http://127.0.0.1:8000/api/account/",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-          withCredentials: true,
-        }
-      );
-      setProfileData(response.data);
-      setSelectedFile(null);
-      setError(null); // Clear error if update is successful
+        await axios.put("http://127.0.0.1:8000/api/account/", formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+            },
+            withCredentials: true,
+        });
+  
+        // ✅ Refresh the page after successful update
+        window.location.reload();
     } catch (error: any) {
-      console.error("Грешка при обновяване на данните за профила:", error);
-      setError(
-        error.response?.data?.detail ||
-          "Неуспешно обновяване на данните за профила."
-      );
+        setError(error.response?.data?.detail || "Failed to update profile data.");
     }
   };
+  
 
-  if (loading) {
-    return <p>Зареждане...</p>;
-  }
 
-  if (error) {
-    return <p className="text-red-500">Грешка: {error}</p>;
-  }
 
-  if (!profileData) {
-    return <p>Няма налични данни за профила.</p>;
-  }
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p className="text-red-500">Error: {error}</p>;
+  if (!profileData) return <p>No profile data available.</p>;
 
   return (
-    <main className="pt-12 w-full mx-auto flex items-start justify-center gap-10 dark:text-d-cadet-gray">
-      <div className="flex-[2] p-10">
-        <div className="p-5 h-[500px] bg-platinum-gray dark:bg-d-rich-black rounded-xl">
-          <h2 className="text-2xl font-bold mb-4">Профил на акаунта</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Profile Picture */}
-            <div>
-              <label htmlFor="profilePic" className="block font-medium">
-                Профилна снимка
-              </label>
-              {profileData.profilePic && (
-                <img
-                  src={profileData.profilePic}
-                  alt="Profile Picture"
-                  className="w-24 h-24 rounded-full mb-2"
-                />
-              )}
-              <input
-                type="file"
-                id="profilePic"
-                name="profilePic"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
-              />
-            </div>
-
-            {/* Input fields for profile data */}
-            <div>
-              <label htmlFor="name" className="block font-medium">
-                Име
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={profileData.name}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
-              />
-            </div>
-            <div>
-              <label htmlFor="username" className="block font-medium">
-                Потребителско име
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={profileData.username}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block font-medium">
-                Имейл
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={profileData.email}
-                onChange={handleInputChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 dark:bg-d-charcoal"
-              />
-            </div>
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
-              Запази промените
-            </button>
-          </form>
-        </div>
-      </div>
-      <div className="flex-[3] p-10 h-[500px]">
-        <h2 className="text-xl font-semibold mb-2">Моите публикации</h2>
-        <div className="flex flex-col gap-4 overflow-y-auto h-[480px]">
-          {userPosts.length > 0 ? (
-            userPosts.map((post) => (
-              <div key={post.id} className="bg-white p-4 rounded-xl shadow-md dark:bg-d-rich-black">
-                <h3 className="font-semibold text-lg">{post.title}</h3>
-                <p className="text-gray-700">{post.content}</p>
-                <p className="text-gray-500 text-sm">
-                  {new Date(post.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            ))
+    <main className="w-full flex justify-center bg-gray-100 py-[12vh]">
+      <div className="w-[600px] bg-white shadow-lg rounded-lg p-6">
+        <div className="flex flex-col items-center border-b pb-4">
+          {profileData?.profilePic ? (
+            <img
+              src={profileData.profilePic}
+              alt="Profile Picture"
+              className="w-32 h-32 rounded-full border"
+            />
           ) : (
-            <p>Нямате публикувани постове.</p>
+            <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
+              {profileData?.name?.[0] || "?"}
+            </div>
           )}
+          <label className="mt-3 cursor-pointer text-blue-600 hover:underline">
+            Change Profile Picture
+            <input type="file" className="hidden" onChange={handleFileChange} />
+          </label>
         </div>
+
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+  <div>
+    <label className="block font-medium text-gray-700">First Name</label>
+    <input
+      type="text"
+      name="first_name"
+      value={profileData?.first_name || ""}
+      onChange={handleInputChange}
+      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <div>
+    <label className="block font-medium text-gray-700">Last Name</label>
+    <input
+      type="text"
+      name="last_name"
+      value={profileData?.last_name || ""}
+      onChange={handleInputChange}
+      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <div>
+    <label className="block font-medium text-gray-700">Username</label>
+    <input
+      type="text"
+      name="username"
+      value={profileData?.username || ""}
+      onChange={handleInputChange}
+      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <div>
+    <label className="block font-medium text-gray-700">Email</label>
+    <input
+      type="email"
+      name="email"
+      value={profileData?.email || ""}
+      disabled
+      className="w-full border bg-gray-100 rounded-md px-3 py-2 cursor-not-allowed"
+    />
+  </div>
+  <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700">
+    Save Changes
+  </button>
+</form>
+
       </div>
     </main>
   );
