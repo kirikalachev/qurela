@@ -1,17 +1,17 @@
-//old code
 'use client';
 
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useCreatePost } from "@/context/CreatePostContext";
-import CustomSelect from "@/components/createPost/customSelect"; // assuming your select component is exported from selectOption.tsx
+import CustomSelect from "@/components/createPost/customSelect";
 import Cookies from "js-cookie";
 
 export default function CreatePost() {
   const { isOpen, closePost } = useCreatePost();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
+  // Now storing category as a number (the category id)
+  const [category, setCategory] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +31,7 @@ export default function CreatePost() {
     setLoading(true);
     setError(null);
 
-    const token = Cookies.get("token"); // Get the token from Cookies
+    const token = Cookies.get("token");
     if (!token) {
       window.location.href = "/auth/signin";
       return;
@@ -43,7 +43,7 @@ export default function CreatePost() {
         {
           title,
           content,
-          category,
+          category_id: category,
         },
         {
           headers: {
@@ -100,7 +100,7 @@ export default function CreatePost() {
         </div>
         <div className="flex-[3] flex items-center justify-between">
           <div>
-            <CustomSelect onChange={(value) => setCategory(value)} />
+            <CustomSelect onChange={(value: number) => setCategory(value)} />
           </div>
           <button
             className="bg-safety-orange p-2 select-none"

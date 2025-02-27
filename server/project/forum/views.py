@@ -7,17 +7,23 @@ from django.db.models import F
 from .models import Post, Comment, SavedPost, Vote, Category
 from .serializers import PostSerializer, CommentSerializer, SavedPostSerializer, VoteSerializer, CategorySerializer
 
+# List all categories
 @api_view(["GET"])
 def category_list(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
-# List all posts with comments or create a new post
+# List posts, optionally filtered by category
 @api_view(["GET", "POST"])
 def post_list(request):
     if request.method == "GET":
-        posts = Post.objects.prefetch_related("comments").all()
+        category_id = request.GET.get("category")  # Get category ID from query params
+        posts = Post.objects.select_related("category").all()  # Use select_related for efficiency
+
+        if category_id:
+            posts = posts.filter(category__id=category_id)
+
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
 
@@ -34,7 +40,7 @@ def post_list(request):
 # Retrieve, update, or delete a post
 @api_view(["GET", "PUT", "DELETE"])
 def post_detail(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = get_object_or_404(Post.objects.select_related("category"), id=post_id)
 
     if request.method == "GET":
         serializer = PostSerializer(post)
@@ -93,7 +99,6 @@ def save_post(request, post_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def user_posts(request):
-    print(f"User: {request.user}")
     published_posts = Post.objects.filter(author=request.user)
     saved_posts = SavedPost.objects.filter(user=request.user)
 
@@ -142,9 +147,10 @@ def downvote_post(request, post_id):
 
     return Response({"message": "Downvote registered"}, status=status.HTTP_200_OK)
 
+# Get posts by category
 @api_view(["GET"])
-def get_comments(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
-    comments = Comment.objects.filter(post=post)
-    serializer = CommentSerializer(comments, many=True)
+def posts_by_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    posts = Post.objects.filter(category=category).select_related("category")
+    serializer = PostSerializer(posts, many=True)
     return Response(serializer.data)

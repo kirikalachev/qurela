@@ -5,13 +5,18 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 
-interface SelectOptionProps {
-  onChange: (value: string) => void;
+interface Category {
+  id: number;
+  name: string;
 }
 
-export default function SelectOption({ onChange }: SelectOptionProps) {
-  const [options, setOptions] = useState<string[]>([]);
-  const [selected, setSelected] = useState("");
+interface SelectOptionProps {
+  onChange: (value: number) => void;
+}
+
+export default function CustomSelect({ onChange }: SelectOptionProps) {
+  const [options, setOptions] = useState<Category[]>([]);
+  const [selected, setSelected] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -19,7 +24,7 @@ export default function SelectOption({ onChange }: SelectOptionProps) {
 
   const router = useRouter();
 
-  // Проверка дали потребителят е автентикиран чрез cookie "token"
+  // Check for user authentication via token cookie
   const isAuthenticated = () => {
     const token = Cookies.get("token");
     return !!token;
@@ -27,7 +32,6 @@ export default function SelectOption({ onChange }: SelectOptionProps) {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      // Ако потребителят не е автентикиран, пренасочваме към логин страницата
       router.push("/auth/signin");
       return;
     }
@@ -41,10 +45,9 @@ export default function SelectOption({ onChange }: SelectOptionProps) {
           },
         });
         console.log("Categories fetched successfully:", response.data);
-        // Ако API-то връща масив от обекти, мапваме ги към масив от имена
+        // Assuming response.data is an array of category objects with id and name
         if (Array.isArray(response.data)) {
-          const categories = response.data.map((cat: any) => cat.name);
-          setOptions(categories);
+          setOptions(response.data);
         } else {
           setError("Неуспешно зареждане на категории.");
         }
@@ -60,11 +63,8 @@ export default function SelectOption({ onChange }: SelectOptionProps) {
   }, [router]);
 
   const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchTerm.toLowerCase())
+    option.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const displayedOptions =
-    [...filteredOptions];
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -100,18 +100,18 @@ export default function SelectOption({ onChange }: SelectOptionProps) {
       />
       {isOpen && (
         <ul className="dark:bg-d-charcoal overflow-y-auto absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40">
-          {displayedOptions.map((option) => (
+          {filteredOptions.map((option) => (
             <li
-              key={option}
+              key={option.id}
               className="p-2 hover:bg-blue-100 cursor-pointer"
               onClick={() => {
                 setSelected(option);
-                setSearchTerm(option);
+                setSearchTerm(option.name);
                 setIsOpen(false);
-                onChange(option);
+                onChange(option.id);
               }}
             >
-              {option}
+              {option.name}
             </li>
           ))}
         </ul>

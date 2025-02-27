@@ -11,6 +11,7 @@ class Post(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)  # New field added
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     upvotes = models.IntegerField(default=0)
@@ -33,11 +34,10 @@ class Vote(models.Model):
         unique_together = ('user', 'post')
 
 class Comment(models.Model):
-    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="comments")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     author = models.ForeignKey(User, on_delete=models.CASCADE)  # Ensure this field exists and is not nullable
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
 
 class SavedPost(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

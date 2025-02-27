@@ -18,12 +18,15 @@ interface Post {
   id: number;
   title: string;
   content: string;
-  author: string; // например, потребителско име
+  author: string;
   created_at: string;
   upvotes: number;
   downvotes: number;
-  category: string; // добавено поле за темата
-  comments?: Comment[]; // include comments fetched from the backend
+  category: {
+    id: number;
+    name: string;
+  };
+  comments?: Comment[];
 }
 
 interface Category {
@@ -41,7 +44,20 @@ export default function ForumPage() {
   const [loading, setLoading] = useState(true);
   // New state for holding the search query text
   const [searchQuery, setSearchQuery] = useState<string>('');
+  // New state for holding the active category filter
+  const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const router = useRouter();
+  
+  // State for toggling comment visibility per post
+  const [commentsVisible, setCommentsVisible] = useState<{ [key: number]: boolean }>({});
+
+  // Toggle function for comments and create comment input
+  const toggleComments = (postId: number) => {
+    setCommentsVisible(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
 
   // Helper function to fetch comments for a given postId
   const fetchComments = async (postId: number, token: string): Promise<Comment[]> => {
@@ -76,17 +92,23 @@ export default function ForumPage() {
       })
       .then(async (response) => {
         const postsData: Post[] = response.data;
-        // For each post, fetch its comments and attach them
+      
+        // Sort posts by created_at in descending order (newest first)
+        postsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+        // Fetch comments for each post
         const postsWithComments = await Promise.all(
           postsData.map(async (post) => {
             const comments = await fetchComments(post.id, token);
             return { ...post, comments };
           })
         );
+      
         setPosts(postsWithComments);
         setAllPosts(postsWithComments);
         setLoading(false);
       })
+      
       .catch((error) => {
         console.error("Грешка при зареждане на публикации:", error);
         setError(
@@ -124,14 +146,41 @@ export default function ForumPage() {
   // New search handler that filters posts based on the title (heading)
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (searchQuery.trim() === '') {
-      // If search query is empty, show all posts
-      setPosts(allPosts);
-    } else {
-      const filtered = allPosts.filter(post =>
+    let filteredPosts = allPosts;
+    if (searchQuery.trim() !== '') {
+      filteredPosts = filteredPosts.filter(post =>
         post.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      setPosts(filtered);
+    }
+    if (activeCategory !== null) {
+      filteredPosts = filteredPosts.filter(post => post.category?.id === activeCategory);
+    }
+    setPosts(filteredPosts);
+  };
+
+  // New handler for filtering by category
+  const handleCategoryFilter = (categoryId: number) => {
+    setActiveCategory(categoryId);
+    let filteredPosts = allPosts.filter(post => post.category?.id === categoryId);
+    // If there's an active search query, apply that filter as well
+    if (searchQuery.trim() !== '') {
+      filteredPosts = filteredPosts.filter(post =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    setPosts(filteredPosts);
+  };
+
+  // Optionally, handler to clear category filter
+  const clearCategoryFilter = () => {
+    setActiveCategory(null);
+    // Reapply search filter if any
+    if (searchQuery.trim() !== '') {
+      setPosts(allPosts.filter(post =>
+        post.title.toLowerCase().includes(searchQuery.toLowerCase())
+      ));
+    } else {
+      setPosts(allPosts);
     }
   };
 
@@ -174,14 +223,17 @@ export default function ForumPage() {
         };
       });
       setAllPosts(updatedPosts);
-      // If a search query is active, filter the updated posts accordingly
+      // Reapply filters if active
+      let filteredPosts = updatedPosts;
       if (searchQuery.trim() !== '') {
-        setPosts(updatedPosts.filter(post =>
+        filteredPosts = filteredPosts.filter(post =>
           post.title.toLowerCase().includes(searchQuery.toLowerCase())
-        ));
-      } else {
-        setPosts(updatedPosts);
+        );
       }
+      if (activeCategory !== null) {
+        filteredPosts = filteredPosts.filter(post => post.category?.id === activeCategory);
+      }
+      setPosts(filteredPosts);
     } catch (error) {
       console.error("Грешка при гласуване:", error);
   
@@ -227,6 +279,15 @@ export default function ForumPage() {
               🔍
             </button>
           </form>
+          {/* Button to clear category filter if active */}
+          {activeCategory && (
+            <button
+              onClick={clearCategoryFilter}
+              className="bg-gray-200 text-black px-4 py-2 rounded-lg"
+            >
+              Показване на всички категории
+            </button>
+          )}
           {/* Бутон за отваряне на CreatePost */}
           <button
             className="bg-safety-orange text-white px-4 py-2 rounded-lg"
@@ -268,64 +329,71 @@ export default function ForumPage() {
               >
                 👎 {post.downvotes}
               </button>
-              <button className="text-gray-600 hover:text-blue-500">
+              <button
+                className="text-gray-600 hover:text-blue-500"
+                onClick={() => toggleComments(post.id)}
+              >
                 💬 Comment
               </button>
               <button className="text-gray-600 hover:text-blue-500">
                 🔗 Share
               </button>
-              <Link
-                href={`/forum/post/${post.id}`}
-                className="text-blue-500 hover:underline"
-              >
-                #{post.category}
-              </Link>
-            </div>
-            {/* Display Comments Under Each Post */}
-            <div className="mt-4">
-              <h4 className="font-semibold mb-2">Коментари:</h4>
-              {post.comments && post.comments.length > 0 ? (
-                post.comments.map((comment) => (
-                  <div key={comment.id} className="border p-2 my-2 rounded">
-                    <p className="text-gray-800">{comment.content}</p>
-                    <p className="text-xs text-gray-500">
-                      От: {comment.author} • {new Date(comment.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                ))
+              {post.category ? (
+                <p
+                  className="text-blue-500 hover:underline"
+                >
+                  #{post.category.name}
+                </p>
               ) : (
-                <p className="text-gray-500">Няма коментари.</p>
+                <span className="text-gray-500">Без категория</span>
               )}
             </div>
-            {/* Integrated Comment Creation */}
-            <div className="mt-4 border-t pt-4">
-              <CreateComment 
-                postId={post.id} 
-                onCommentAdded={(newComment) => {
-                  // Append the new comment to the post's comments locally
-                  setPosts((prevPosts) =>
-                    prevPosts.map((p) =>
-                      p.id === post.id
-                        ? {
-                            ...p,
-                            comments: p.comments ? [...p.comments, newComment] : [newComment],
-                          }
-                        : p
-                    )
-                  );
-                  setAllPosts((prevPosts) =>
-                    prevPosts.map((p) =>
-                      p.id === post.id
-                        ? {
-                            ...p,
-                            comments: p.comments ? [...p.comments, newComment] : [newComment],
-                          }
-                        : p
-                    )
-                  );
-                }} 
-              />
-            </div>
+            {commentsVisible[post.id] && (
+              <>
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">Коментари:</h4>
+                  {post.comments && post.comments.length > 0 ? (
+                    post.comments.map((comment) => (
+                      <div key={comment.id} className="border p-2 my-2 rounded">
+                        <p className="text-gray-800">{comment.content}</p>
+                        <p className="text-xs text-gray-500">
+                          От: {comment.author} • {new Date(comment.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">Няма коментари.</p>
+                  )}
+                </div>
+                <div className="mt-4 border-t pt-4">
+                  <CreateComment 
+                    postId={post.id} 
+                    onCommentAdded={(newComment) => {
+                      setPosts((prevPosts) =>
+                        prevPosts.map((p) =>
+                          p.id === post.id
+                            ? {
+                                ...p,
+                                comments: p.comments ? [...p.comments, newComment] : [newComment],
+                              }
+                            : p
+                        )
+                      );
+                      setAllPosts((prevPosts) =>
+                        prevPosts.map((p) =>
+                          p.id === post.id
+                            ? {
+                                ...p,
+                                comments: p.comments ? [...p.comments, newComment] : [newComment],
+                              }
+                            : p
+                        )
+                      );
+                    }} 
+                  />
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -337,12 +405,12 @@ export default function ForumPage() {
           {Array.isArray(categories) && categories.length > 0 ? (
             categories.map((category) => (
               <li key={category.id}>
-                <a
-                  href={`#${category.id}`}
-                  className="block p-2 rounded-lg hover:bg-blue-100 text-brandeis-blue"
+                <button
+                  onClick={() => handleCategoryFilter(category.id)}
+                  className="block w-full text-left p-2 rounded-lg hover:bg-blue-100 text-brandeis-blue"
                 >
                   {category.name}
-                </a>
+                </button>
               </li>
             ))
           ) : (
