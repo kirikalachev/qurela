@@ -158,7 +158,6 @@ export default function ForumPage() {
     setPosts(filteredPosts);
   };
 
-  // New handler for filtering by category
   const handleCategoryFilter = (categoryId: number) => {
     setActiveCategory(categoryId);
     let filteredPosts = allPosts.filter(post => post.category?.id === categoryId);
@@ -342,7 +341,7 @@ export default function ForumPage() {
                 <p
                   className="text-blue-500 hover:underline"
                 >
-                  #{post.category.name}
+                  #{post.category}
                 </p>
               ) : (
                 <span className="text-gray-500">Без категория</span>

@@ -10,9 +10,9 @@ class PostSerializer(serializers.ModelSerializer):
     author = serializers.ReadOnlyField(source="author.username")
     upvotes = serializers.IntegerField(read_only=True)
     downvotes = serializers.IntegerField(read_only=True)
-    # Use a nested serializer to return both id and name for the category
-    category = CategorySerializer(read_only=True)
-    # Use a writeable field to accept the category id when creating a post
+    # Return category as a string (its name) instead of as an object
+    category = serializers.CharField(source="category.name", read_only=True)
+    # Accept the category id when creating a post
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), write_only=True, source="category"
     )
