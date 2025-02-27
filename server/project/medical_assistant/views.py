@@ -18,11 +18,17 @@ from rank_bm25 import BM25Okapi
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lex_rank import LexRankSummarizer
+from googletrans import Translator
+
 
 # Load SpaCy NLP model
 nlp = spacy.load("en_core_web_sm")
 
-WHO_API_BASE_URL = "http://apps.who.int/gho/athena/api/"
+translator = Translator()
+
+nltk.download("punkt")
+
+# WHO_API_BASE_URL = "http://apps.who.int/gho/athena/api/"
 
 from django.db.models import Count
 
@@ -46,7 +52,7 @@ def send_message(request, conversation_id=None):
     conversation = None
 
     if conversation_id:
-        # If a conversation exists, get it
+        # If a conversation exists, get it.
         conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
 
     if request.method == 'POST':
@@ -54,18 +60,43 @@ def send_message(request, conversation_id=None):
 
         if user_message:  # Only proceed if the user typed something
             if not conversation:
-                # Create a new conversation if one doesn't exist
+                # Create a new conversation if one doesn't exist.
                 conversation = Conversation.objects.create(user=request.user)
 
-            # Save the user's message
+            # Save the user's message.
             Message.objects.create(conversation=conversation, sender='user', text=user_message)
             
-            # Generate a bot response
-            Message.objects.create(conversation=conversation, sender='bot', text='Here is the response')
+            # --- Search Articles Logic for Chatbot Response ---
+            # Treat the user's message as a search query.
+            best_category = detect_category(user_message)
+            if best_category:
+                results = hybrid_search(user_message, best_category)
+                main_title = extract_title(user_message)
+                if results:
+                    # Build an HTML response similar to your search_form template.
+                    response_html = f"<h2>Search Results for \"{main_title}\"</h2>"
+                    response_html += f"<h3>Category: {best_category}</h3><ul>"
+                    for result in results:
+                        response_html += "<li>"
+                        response_html += f"<a href=\"{result['url']}\" target=\"_blank\">{result['title']}</a><br>"
+                        response_html += f"<strong>Snippet:</strong> {result['snippet']}...<br>"
+                        response_html += f"<strong>Score:</strong> {result['score']}<br>"
+                        response_html += f"<strong>URL:</strong> <a href=\"{result['url']}\" target=\"_blank\">{result['url']}</a>"
+                        response_html += "</li>"
+                    response_html += "</ul>"
+                else:
+                    response_html = "<p>No relevant results found for your query.</p>"
+            else:
+                response_html = "<p>No relevant category found for your query.</p>"
+
+            # Save the bot's response (HTML formatted).
+            Message.objects.create(conversation=conversation, sender='bot', text=response_html)
 
             return redirect('conversation_detail', conversation_id=conversation.id)
 
     return redirect('conversation_list')
+
+
 
 # ///responses:///
 
@@ -88,68 +119,21 @@ def clean_document(document):
     document = " ".join(document.split())
     return document
 
-# def extract_snippet(query, document, snippet_length=600):
-#     """Extract a relevant snippet answering the query from the document."""
-#     document = clean_document(document)
-#     sentences = sent_tokenize(document)
-#     if not sentences:
-#         return document[:snippet_length]
-#     query_tokens = query.lower().split()
-#     tokenized_sentences = [sentence.lower().split() for sentence in sentences]
-#     bm25 = BM25Okapi(tokenized_sentences)
-#     sentence_scores = bm25.get_scores(query_tokens)
-#     ranked_sentences = sorted(zip(sentences, sentence_scores), key=lambda x: x[1], reverse=True)[:3]
-#     snippet = " ".join(sentence for sentence, score in ranked_sentences)
-#     snippet = snippet[:snippet_length]
-    
-#     return snippet
-# def extract_snippet_coherent(query, document, snippet_length=600):
-#     """
-#     Extract a coherent snippet from the document:
-#     - Clean the document
-#     - Tokenize into sentences
-#     - Identify the most relevant sentence using BM25
-#     - Expand to include neighboring sentences if they are similarly relevant
-#     """
-#     # Clean the document from extraneous navigation/promotional text
-#     document = clean_document(document)
-    
-#     # Tokenize document into sentences
-#     sentences = sent_tokenize(document)
-#     if not sentences:
-#         return document[:snippet_length]
-    
-#     # Tokenize the query
-#     query_tokens = query.lower().split()
-    
-#     # Compute BM25 scores for each sentence
-#     tokenized_sentences = [sentence.lower().split() for sentence in sentences]
-#     bm25 = BM25Okapi(tokenized_sentences)
-#     sentence_scores = bm25.get_scores(query_tokens)
-    
-#     # Find index of the most relevant sentence
-#     best_index = max(range(len(sentence_scores)), key=lambda i: sentence_scores[i])
-#     best_score = sentence_scores[best_index]
-    
-#     # Start with the best sentence
-#     snippet_sentences = [sentences[best_index]]
-    
-#     # Optionally include the previous sentence if its score is significant
-#     if best_index > 0 and sentence_scores[best_index - 1] > 0.5 * best_score:
-#         snippet_sentences.insert(0, sentences[best_index - 1])
-    
-#     # Optionally include the next sentence if its score is significant
-#     if best_index < len(sentences) - 1 and sentence_scores[best_index + 1] > 0.5 * best_score:
-#         snippet_sentences.append(sentences[best_index + 1])
-    
-#     # Combine the selected sentences
-#     snippet = " ".join(snippet_sentences)
-    
-#     # Trim to the desired snippet length
-#     if len(snippet) > snippet_length:
-#         snippet = snippet[:snippet_length].rsplit(" ", 1)[0]  # avoid cutting mid-word
-    
-#     return snippet
+
+def extract_title(query):
+    """
+    Extracts a short title from a user query using spaCy noun chunking.
+    (Ensure you have initialized 'nlp' with your spaCy model.)
+    """
+    doc = nlp(query)
+    noun_chunks = list(doc.noun_chunks)
+    if noun_chunks:
+        title = noun_chunks[-1].text
+        if title.lower().startswith("the "):
+            title = title[4:]
+        return title.strip()
+    return query.strip()
+
 
 def extract_snippet_sumy(document, num_sentences=3, snippet_length=600):
     """
@@ -157,7 +141,7 @@ def extract_snippet_sumy(document, num_sentences=3, snippet_length=600):
     - num_sentences: Number of sentences to include in the summary.
     - snippet_length: Maximum length of the snippet.
     """
-    # Clean the document (reuse your clean_document function)
+    # Clean the document
     clean_text = clean_document(document)
     
     # Create a parser for the document
@@ -178,6 +162,7 @@ def extract_snippet_sumy(document, num_sentences=3, snippet_length=600):
     
     return snippet
 
+
 def detect_category(query):
     """Find the most relevant category based on BM25 keyword search."""
     query_tokens = word_tokenize(query.lower())
@@ -188,6 +173,7 @@ def detect_category(query):
         category_scores[category] = score
     best_category = max(category_scores, key=category_scores.get)
     return best_category if category_scores[best_category] > 0 else None
+
 
 def hybrid_search(query, category, top_n=5, bm25_weight=0.5, faiss_weight=0.5, score_threshold=3.0):
     """Retrieve top articles that strongly match the query using a hybrid approach."""
@@ -222,11 +208,14 @@ def hybrid_search(query, category, top_n=5, bm25_weight=0.5, faiss_weight=0.5, s
         })
     return search_results
 
+
 @csrf_exempt
 def search_articles(request):
     results = []
     best_category = None
     query = ""
+    main_title = ""
+
     if request.method == "POST":
         try:
             if request.content_type == "application/json":
@@ -238,167 +227,19 @@ def search_articles(request):
                 return JsonResponse({"error": "Query is required"}, status=400)
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        
         best_category = detect_category(query)
         if not best_category:
             return JsonResponse({"error": "No relevant category found"}, status=400)
         results = hybrid_search(query, best_category)
+        # Use extract_title to compute a shorter main title
+        main_title = extract_title(query)
+    else:
+        main_title = ""
+
     return render(request, "search_form.html", {
         "category": best_category,
         "results": results,
+        "main_title": main_title,
         "query": query
     })
-
-# # ///responses:///
-
-# def get_ngrams(doc, n):
-#     tokens = [token for token in doc if token.is_alpha]
-#     return [tokens[i:i+n] for i in range(len(tokens)-n+1)]
-
-# def contains_quotes(user_input):
-#     return bool(re.search(r'["\'].*?["\']', user_input))
-
-# def extract_quotes(user_input):
-#     return re.findall(r'["\'](.*?)["\']', user_input)
-
-# def summarize_document(text):
-#     return "This is a summary of the input document."
-
-# def is_nutrition_question(user_input):
-#     # Preprocess the input
-#     user_input = user_input.lower().strip()
-    
-#     # Define nutrition-related keywords
-#     nutrition_keywords = {
-#         "calories", "protein", "vitamins", "minerals", "carbohydrates", 
-#         "fat", "fiber", "nutrients", "diet", "nutrition", "healthy foods", 
-#         "superfoods", "sugar", "cholesterol", "water intake", "hydration"
-#     }
-    
-#     # Common question starters
-#     question_words = {"what", "how", "why", "is", "are", "does", "can"}
-    
-#     # Tokenize the input by splitting on spaces
-#     words = set(re.findall(r'\b\w+\b', user_input))
-    
-#     # Check for nutrition keywords in the input
-#     if nutrition_keywords & words:
-#         return True
-    
-#     # Check if it starts with a question word and contains a nutrition term
-#     if any(user_input.startswith(q_word) for q_word in question_words):
-#         if nutrition_keywords & words:
-#             return True
-    
-#     return False
-
-# # Fetch WHO indicators
-# def fetch_indicators():
-#     response = requests.get(f"{WHO_API_BASE_URL}GHO?format=json")
-#     if response.status_code == 200:
-#         try:
-#             # Safely navigate the JSON response structure
-#             indicators = response.json().get("dimension", [{}])[0].get("code", [])
-#             # Build the dictionary only for items with "display" and "code" keys
-#             return {
-#                 item.get("display"): item.get("code")
-#                 for item in indicators
-#                 if "display" in item and "code" in item
-#             }
-#         except (KeyError, IndexError, TypeError) as e:
-#             print(f"Error parsing indicators data: {e}")
-#             return {}
-#     else:
-#         print("Error fetching indicators from WHO API")
-#         return {}
-
-# # Cache indicators for quicker lookup
-# indicators = fetch_indicators()
-
-# # Query WHO API
-# def query_who_api(indicator_code):
-#     url = f"{WHO_API_BASE_URL}GHO/{indicator_code}?format=json"
-#     try:
-#         response = requests.get(url, timeout=10)
-#         response.raise_for_status()
-#         return response.json()
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error querying WHO API: {e}")
-#         return {"error": "No data found or API error"}
-
-# # Format WHO API response
-# def format_response(api_data):
-#     try:
-#         data_points = api_data["fact"]
-#         results = []
-#         for point in data_points:
-#             region = point.get("dim", {}).get("REGION", "Unknown")
-#             year = point.get("dim", {}).get("YEAR", "Unknown")
-#             value = point.get("value", "N/A")
-#             results.append(f"Region: {region}, Year: {year}, Value: {value}")
-#         return "\n".join(results)
-#     except KeyError:
-#         return "No data available in the response"
-
-# # Parse question and extract indicator code
-# def parse_question(user_input):
-#     doc = nlp(user_input)
-#     keywords = [token.text.lower() for token in doc if token.is_alpha]
-
-#     for keyword in keywords:
-#         for display, code in indicators.items():
-#             if keyword in display.lower():
-#                 return code
-#     return None
-
-# # Detect user intent
-# def detect_intent(user_input):
-#     doc = nlp(user_input)
-    
-#     # Detect "summarize" intent
-#     if any(token.lemma_ in ["summarize", "summary", "shorten", "condense"] for token in doc):
-#         return "summarize"
-    
-#     # Detect "search" intent (default for questions)
-#     if user_input.lower().startswith(("what", "how", "does", "can", "is")):
-#         return "search"
-#     elif any(token.text.lower() in ["what", "how", "does", "can", "is"] for token in doc):
-#         return "search"
-
-#     return "search"  # Default to search if unsure
-
-# # Django view function
-# def assistant(request):
-#     if request.method == "POST":
-#         user_input = request.POST.get('request')
-#         intent = detect_intent(user_input)
-
-#         if intent == "search":
-#             # Extract WHO indicator code from user input
-#             indicator_code = parse_question(user_input)
-#             if indicator_code:
-#                 # Query the WHO API
-#                 api_data = query_who_api(indicator_code)
-#                 # Format the API response for the user
-#                 response = format_response(api_data)
-#                 context = {
-#                     'intent': 'search',
-#                     'response': response
-#                 }
-#             else:
-#                 # No matching WHO indicator found
-#                 context = {
-#                     'intent': 'search',
-#                     'response': "Sorry, I couldn't find relevant health data for your query."
-#                 }
-
-#         elif intent == "summarize":
-#             summary = summarize_document(user_input)
-#             context = {
-#                 'intent': 'summarize',
-#                 'summary': summary,
-#             }
-
-#         return render(request, "medical_assistant/assistant.html", context)
-
-#     # Render the assistant interface
-#     return render(request, "medical_assistant/assistant.html")
