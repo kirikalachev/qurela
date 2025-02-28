@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import CreateComment from "@/components/createComment"; 
+import CreateComment from "@/components/CreateComment"; 
+import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Search, ExternalLink } from "lucide-react";
 
 interface Comment {
   id: number;
@@ -259,8 +260,22 @@ export default function ForumPage() {
     return <p className="text-red-500">Грешка: {error}</p>;
   }
 
+  const navigateToPost = (postId: number) => {
+    router.push(`/forum/post/${postId}`);
+  };
+
+  const copyToClipboard = async (postId: number) => {
+    try {
+      const url = `${window.location.origin}/forum/post/${postId}`;
+      await navigator.clipboard.writeText(url);
+      alert("Връзката е копирана!"); // You can replace this with your preferred notification system
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      alert("Грешка при копиране на връзката");
+    }
+  };
   return (
-    <main className="pt-[10%] min-h-screen flex flex-col md:flex-row gap-6 p-6">
+    <main className="min-h-[100vh] pt-[10%] min-h-screen flex flex-col md:flex-row gap-6 p-6">
       <div className="md:w-2/3 flex flex-col gap-6">
         <div className="bg-white dark:bg-d-rich-black p-4 rounded-xl shadow-md flex items-center gap-4">
           <form className="relative flex-grow flex items-center gap-2" onSubmit={handleSearch}>
@@ -310,7 +325,7 @@ export default function ForumPage() {
               </div>
             </div>
             <div className="mb-4">
-              <h3 className="font-semibold text-lg">{post.title}</h3>
+              <h3 className="font-semibold text-lg" onClick={() => navigateToPost(post.id)}>{post.title}</h3>
               <p className="text-gray-700 dark:text-d-cadet-gray">
                 {post.content}
               </p>
@@ -320,22 +335,32 @@ export default function ForumPage() {
                 className="text-green-600 hover:text-green-800"
                 onClick={() => handleVote(post.id, "upvote")}
               >
-                👍 {post.upvotes}
+                <ThumbsUp size={20} />
+                {post.upvotes}
               </button>
               <button
                 className="text-red-600 hover:text-red-800"
                 onClick={() => handleVote(post.id, "downvote")}
               >
-                👎 {post.downvotes}
+                <ThumbsDown size={20} />
+                {post.downvotes}
               </button>
               <button
                 className="text-gray-600 hover:text-blue-500"
                 onClick={() => toggleComments(post.id)}
               >
-                💬 Comment
+                <MessageCircle size={20} />
+                Коментиране
               </button>
-              <button className="text-gray-600 hover:text-blue-500">
-                🔗 Share
+              <button className="text-gray-600 hover:text-blue-500" onClick={() => copyToClipboard(post.id)}>
+              <Share2 size={20} />
+              Споделяне
+              </button>
+              <button 
+                className="text-gray-600 hover:text-blue-500"
+                onClick={() => navigateToPost(post.id)}
+              >
+                <ExternalLink size={20} /> Отвори публикация
               </button>
               {post.category ? (
                 <p

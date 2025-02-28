@@ -264,7 +264,7 @@ const Navbar: React.FC = () => {
             </li>
 
             {/* Notification Button */}
-            <button
+            {/* <button
               id="notification"
               onClick={(e) => toggleNavBtns(e, "notification")}
               className={`relative flex items-center justify-center rounded-full aspect-square ${
@@ -307,7 +307,7 @@ const Navbar: React.FC = () => {
                   </li>
                 </div>
               )}
-            </button>
+            </button> */}
 
             {/* Profile Button */}
             <button

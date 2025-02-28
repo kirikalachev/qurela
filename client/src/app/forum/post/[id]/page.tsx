@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-import CreateComment from '@/components/createComment';
+import CreateComment from "@/components/CreateComment"; 
 
 interface Comment {
   id: number;
@@ -85,6 +85,17 @@ const PostDetailPage = () => {
   if (error) return <p>{error}</p>;
   if (loading || !post) return <p>Loading...</p>;
 
+  const copyToClipboard = async (postId: number) => {
+    try {
+      const url = `${window.location.origin}/forum/post/${postId}`;
+      await navigator.clipboard.writeText(url);
+      alert("Връзката е копирана!"); // You can replace this with your preferred notification system
+    } catch (err) {
+      console.error("Failed to copy:", err);
+      alert("Грешка при копиране на връзката");
+    }
+  };
+
   return (
     <div className="pt-[10%] min-h-screen flex flex-col gap-6 p-6">
       {/* Post Details */}
@@ -112,8 +123,8 @@ const PostDetailPage = () => {
           <button className="text-gray-600 hover:text-blue-500">
             💬 Comment
           </button>
-          <button className="text-gray-600 hover:text-blue-500">
-            🔗 Share
+          <button className="text-gray-600 hover:text-blue-500" onClick={() => copyToClipboard(post.id)}>
+            🔗 Споделяне
           </button>
         </div>
       </div>
