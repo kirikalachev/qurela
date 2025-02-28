@@ -13,7 +13,6 @@ const SignIn: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Handle signin form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -23,14 +22,10 @@ const SignIn: React.FC = () => {
       if (response.data.tokens.access) {
         console.log("Login success:", response.data);
       
-        // Store token in both localStorage and cookies
-        // localStorage.setItem("token", response.data.tokens.access);
         document.cookie = `token=${response.data.tokens.access}; path=/; Secure; SameSite=Strict`;
       
-        // Записваме флаг, че току-що сме влезли
         sessionStorage.setItem("showPopup", "true");
       
-        // Redirect to dashboard after login
         router.push("/dashboard");
       }
       

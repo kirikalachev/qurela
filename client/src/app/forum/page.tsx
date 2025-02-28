@@ -38,21 +38,16 @@ interface Category {
 export default function ForumPage() {
   const { openPost } = useCreatePost();
   const [posts, setPosts] = useState<Post[]>([]);
-  // Maintain all posts separately so that search filtering doesn’t lose data
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  // New state for holding the search query text
   const [searchQuery, setSearchQuery] = useState<string>('');
-  // New state for holding the active category filter
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const router = useRouter();
   
-  // State for toggling comment visibility per post
   const [commentsVisible, setCommentsVisible] = useState<{ [key: number]: boolean }>({});
 
-  // Toggle function for comments and create comment input
   const toggleComments = (postId: number) => {
     setCommentsVisible(prev => ({
       ...prev,
@@ -60,7 +55,6 @@ export default function ForumPage() {
     }));
   };
 
-  // Helper function to fetch comments for a given postId
   const fetchComments = async (postId: number, token: string): Promise<Comment[]> => {
     try {
       const response = await axios.get(
@@ -77,7 +71,6 @@ export default function ForumPage() {
     }
   };
 
-  // Fetch posts and then fetch comments for each post
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -94,10 +87,8 @@ export default function ForumPage() {
       .then(async (response) => {
         const postsData: Post[] = response.data;
       
-        // Sort posts by created_at in descending order (newest first)
         postsData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       
-        // Fetch comments for each post
         const postsWithComments = await Promise.all(
           postsData.map(async (post) => {
             const comments = await fetchComments(post.id, token);
@@ -123,7 +114,6 @@ export default function ForumPage() {
       });
   }, [router]);
 
-  // Fetch categories from the database
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) return;
@@ -144,7 +134,6 @@ export default function ForumPage() {
       });
   }, [router]);
 
-  // New search handler that filters posts based on the title (heading)
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     let filteredPosts = allPosts;
@@ -162,7 +151,6 @@ export default function ForumPage() {
   const handleCategoryFilter = (categoryId: number) => {
     setActiveCategory(categoryId);
     let filteredPosts = allPosts.filter(post => post.category?.id === categoryId);
-    // If there's an active search query, apply that filter as well
     if (searchQuery.trim() !== '') {
       filteredPosts = filteredPosts.filter(post =>
         post.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -171,10 +159,8 @@ export default function ForumPage() {
     setPosts(filteredPosts);
   };
 
-  // Optionally, handler to clear category filter
   const clearCategoryFilter = () => {
     setActiveCategory(null);
-    // Reapply search filter if any
     if (searchQuery.trim() !== '') {
       setPosts(allPosts.filter(post =>
         post.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -188,7 +174,6 @@ export default function ForumPage() {
     const token = Cookies.get("token");
     if (!token) return;
   
-    // Optimistic UI update
     setPosts((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
@@ -209,12 +194,10 @@ export default function ForumPage() {
     try {
       await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
   
-      // Fetch the latest posts from the backend
       const response = await axios.get(`http://127.0.0.1:8000/forum/posts/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
   
-      // Merge new posts data while keeping existing comments
       const updatedPosts = response.data.map((newPost: Post) => {
         const oldPost = allPosts.find((p) => p.id === newPost.id);
         return {
@@ -223,7 +206,6 @@ export default function ForumPage() {
         };
       });
       setAllPosts(updatedPosts);
-      // Reapply filters if active
       let filteredPosts = updatedPosts;
       if (searchQuery.trim() !== '') {
         filteredPosts = filteredPosts.filter(post =>
@@ -237,7 +219,6 @@ export default function ForumPage() {
     } catch (error) {
       console.error("Грешка при гласуване:", error);
   
-      // Rollback state if request fails
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.id === postId
@@ -268,7 +249,7 @@ export default function ForumPage() {
     try {
       const url = `${window.location.origin}/forum/post/${postId}`;
       await navigator.clipboard.writeText(url);
-      alert("Връзката е копирана!"); // You can replace this with your preferred notification system
+      alert("Връзката е копирана!"); 
     } catch (err) {
       console.error("Failed to copy:", err);
       alert("Грешка при копиране на връзката");
