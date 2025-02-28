@@ -1,264 +1,254 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from medical_assistant.serializers import ConversationSerializer, MessageSerializer
+from django.shortcuts import get_object_or_404
 from .models import Conversation, Message
-from django.shortcuts import render
-from django.db.models import Count
-import re
-import nltk
-import spacy
-import requests
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from .serializers import ConversationSerializer, MessageSerializer
 import json
-from nltk.tokenize import word_tokenize
-import numpy as np
-from .search_index import categories
-from nltk.tokenize import sent_tokenize
-from rank_bm25 import BM25Okapi
-from sumy.parsers.plaintext import PlaintextParser
-from sumy.nlp.tokenizers import Tokenizer
-from sumy.summarizers.lex_rank import LexRankSummarizer
-from googletrans import Translator
+import requests
+WHO_API_BASE_URL = "https://apps.who.int/gho/athena/api/"
 
+class ConversationRenameAPIView(APIView):
+    """Rename a specific conversation."""
+    permission_classes = [IsAuthenticated]
 
-# Load SpaCy NLP model
-nlp = spacy.load("en_core_web_sm")
-
-translator = Translator()
-
-nltk.download("punkt")
-
-# WHO_API_BASE_URL = "http://apps.who.int/gho/athena/api/"
-
-from django.db.models import Count
-
-@login_required
-def conversation_list(request):
-    conversations = Conversation.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'medical_assistant/conversation_list.html', {'conversations': conversations})
-
-@login_required
-def conversation_detail(request, conversation_id):
-    conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
-    messages = conversation.messages.all().order_by('timestamp')
-    
-    # Retrieve the most recent bot message that may contain search result JSON.
-    search_results_data = {}
-    latest_bot_message = conversation.messages.filter(sender='bot').order_by('-timestamp').first()
-    if latest_bot_message:
-        try:
-            search_results_data = json.loads(latest_bot_message.text)
-        except json.JSONDecodeError:
-            search_results_data = {}
-    
-    context = {
-        "conversation": conversation,
-        "messages": messages,
-        "main_title": search_results_data.get("main_title", ""),
-        "category": search_results_data.get("category", ""),
-        "results": search_results_data.get("results", []),
-        "query": search_results_data.get("query", "")
-    }
-    return render(request, 'medical_assistant/conversation_detail.html', context)
-
-@login_required
-def new_conversation(request):
-    return render(request, 'medical_assistant/conversation_detail.html', {'conversation': None, 'messages': []})
-
-@login_required
-def send_message(request, conversation_id=None):
-    conversation = None
-    if conversation_id:
+    def patch(self, request, conversation_id):
         conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        new_name = request.data.get('name')
 
-    if request.method == 'POST':
-        user_message = request.POST.get('message')
-        if user_message:
-            if not conversation:
+        if not new_name:
+            return Response({'error': 'New name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation.name = new_name
+        conversation.save()
+
+        return Response({'message': 'Conversation renamed successfully'}, status=status.HTTP_200_OK)
+
+
+class ConversationDeleteAPIView(APIView):
+    """Delete a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        conversation.delete()  # Изтрива кореспонденцията
+        return Response({'message': 'Conversation deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ConversationListAPIView(APIView):
+    """Retrieve all conversations for the authenticated user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        conversations = Conversation.objects.filter(user=request.user).order_by('-created_at')
+        serializer = ConversationSerializer(conversations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ConversationDetailAPIView(APIView):
+    """Retrieve messages in a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        serializer = MessageSerializer(conversation.messages.all(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NewConversationAPIView(APIView):
+    """Create a new conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        conversation = Conversation.objects.create(user=request.user)
+        return Response({'message': 'New conversation created', 'conversation_id': conversation.id}, status=status.HTTP_201_CREATED)
+
+
+class SendMessageAPIView(APIView):
+    """Send a message in an existing or new conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, conversation_id=None):
+        try:
+            data = json.loads(request.body)
+            user_message = data.get('message')
+            mode = data.get('mode', 'default')  # Optional mode
+
+            if not user_message:
+                return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if conversation_id:
+                conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+            else:
                 conversation = Conversation.objects.create(user=request.user)
-            # Save the user's message.
+
+            # Save user message
             Message.objects.create(conversation=conversation, sender='user', text=user_message)
 
-            # --- Search Logic ---
-            best_category = detect_category(user_message)
-            main_title = extract_title(user_message)
-            if best_category:
-                results = hybrid_search(user_message, best_category)
-                if results:
-                    data = {
-                        "main_title": main_title,
-                        "category": best_category,
-                        "results": results,
-                        "query": user_message
-                    }
-                else:
-                    data = {
-                        "main_title": main_title,
-                        "category": best_category,
-                        "results": [],
-                        "query": user_message,
-                        "error": "No relevant results found for your query."
-                    }
-            else:
-                data = {
-                    "main_title": main_title,
-                    "category": None,
-                    "results": [],
-                    "query": user_message,
-                    "error": "No relevant category found for your query."
-                }
+            # Generate bot response (placeholder logic)
+            bot_response = f"Bot response to: {user_message} (Mode: {mode})"
+            Message.objects.create(conversation=conversation, sender='bot', text=bot_response)
 
-            # Save the bot's response as a JSON string.
-            Message.objects.create(conversation=conversation, sender='bot', text=json.dumps(data))
+            return Response({'conversation_id': conversation.id, 'response': bot_response}, status=status.HTTP_200_OK)
 
-            # Redirect to the conversation detail page.
-            return redirect('conversation_detail', conversation_id=conversation.id)
-    return redirect('conversation_list')
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON data'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
 # ///responses:///
 
-def clean_document(document):
-    """Remove navigation and promotional elements from the document text."""
-    patterns = [
-        r"Products\s+&\s+Services",
-        r"A\s+Book:\s+Mayo\s+Clinic\s+Guide\s+to\s+\w+",
-        r"A\s+Book:\s+Mayo\s+Clinic\s+on\s+\w+",
-        r"Bath\s+Safety\s+and\s+Mobility\s+Products",
-        r"Show\s+more\s+products",
-        r"Enlarge\s+image",
-        r"\bClose\b",
-        r"from\s+Mayo\s+Clinic\s+Types",
-        r"Types\s+Ankylosing\s+spondylitis\s+Gout\s+Juvenile\s+idiopathic",
-    ]
-    for pattern in patterns:
-        document = re.sub(pattern, '', document, flags=re.IGNORECASE)
-    # Remove extra whitespace and newlines
-    document = " ".join(document.split())
-    return document
+def get_ngrams(doc, n):
+    tokens = [token for token in doc if token.is_alpha]
+    return [tokens[i:i+n] for i in range(len(tokens)-n+1)]
 
+def contains_quotes(user_input):
+    return bool(re.search(r'["\'].*?["\']', user_input))
 
-def extract_title(query):
-    """
-    Extracts a short title from a user query using spaCy noun chunking.
-    (Ensure you have initialized 'nlp' with your spaCy model.)
-    """
-    doc = nlp(query)
-    noun_chunks = list(doc.noun_chunks)
-    if noun_chunks:
-        title = noun_chunks[-1].text
-        if title.lower().startswith("the "):
-            title = title[4:]
-        return title.strip()
-    return query.strip()
+def extract_quotes(user_input):
+    return re.findall(r'["\'](.*?)["\']', user_input)
 
+def summarize_document(text):
+    return "This is a summary of the input document."
 
-def extract_snippet_sumy(document, num_sentences=3, snippet_length=600):
-    """
-    Use Sumy to summarize the document.
-    - num_sentences: Number of sentences to include in the summary.
-    - snippet_length: Maximum length of the snippet.
-    """
-    # Clean the document
-    clean_text = clean_document(document)
+def is_nutrition_question(user_input):
+    # Preprocess the input
+    user_input = user_input.lower().strip()
     
-    # Create a parser for the document
-    parser = PlaintextParser.from_string(clean_text, Tokenizer("english"))
+    # Define nutrition-related keywords
+    nutrition_keywords = {
+        "calories", "protein", "vitamins", "minerals", "carbohydrates", 
+        "fat", "fiber", "nutrients", "diet", "nutrition", "healthy foods", 
+        "superfoods", "sugar", "cholesterol", "water intake", "hydration"
+    }
     
-    # Choose a summarizer (LexRank is used here)
-    summarizer = LexRankSummarizer()
+    # Common question starters
+    question_words = {"what", "how", "why", "is", "are", "does", "can"}
     
-    # Summarize the document
-    summary = summarizer(parser.document, num_sentences)
+    # Tokenize the input by splitting on spaces
+    words = set(re.findall(r'\b\w+\b', user_input))
     
-    # Join the summary sentences into a snippet
-    snippet = " ".join(str(sentence) for sentence in summary)
+    # Check for nutrition keywords in the input
+    if nutrition_keywords & words:
+        return True
     
-    # Optionally trim to the desired snippet_length
-    if len(snippet) > snippet_length:
-        snippet = snippet[:snippet_length].rsplit(" ", 1)[0]
+    # Check if it starts with a question word and contains a nutrition term
+    if any(user_input.startswith(q_word) for q_word in question_words):
+        if nutrition_keywords & words:
+            return True
     
-    return snippet
+    return False
 
-
-def detect_category(query):
-    """Find the most relevant category based on BM25 keyword search."""
-    query_tokens = word_tokenize(query.lower())
-    category_scores = {}
-    for category, index_data in categories.items():
-        bm25 = index_data["bm25"]
-        score = sum(bm25.get_scores(query_tokens))
-        category_scores[category] = score
-    best_category = max(category_scores, key=category_scores.get)
-    return best_category if category_scores[best_category] > 0 else None
-
-
-def hybrid_search(query, category, top_n=5, bm25_weight=0.5, faiss_weight=0.5, score_threshold=3.0):
-    """Retrieve top articles that strongly match the query using a hybrid approach."""
-    index_data = categories[category]
-    query_tokens = word_tokenize(query.lower())  
-    bm25_scores = index_data["bm25"].get_scores(query_tokens)  
-    bm25_top_n = np.argsort(bm25_scores)[::-1][:top_n]  
-    query_embedding = np.array([index_data["embedding_model"].encode(query)]).astype("float32")  
-    _, faiss_top_n = index_data["faiss_index"].search(query_embedding, top_n)  
-    faiss_top_n = faiss_top_n[0]  
-    combined_scores = {}
-    for i in bm25_top_n:
-        combined_scores[i] = bm25_scores[i] * bm25_weight
-    for i in faiss_top_n:
-        combined_scores[i] = combined_scores.get(i, 0) + faiss_weight
-    ranked_results = sorted(combined_scores.items(), key=lambda x: x[1], reverse=True)
-    search_results = []
-    seen_titles = set()
-    for idx, score in ranked_results:
-        if score < score_threshold:
-            continue
-        document_text = index_data["documents"][idx]
-        title = index_data["titles"][idx]
-        if title in seen_titles:
-            continue
-        seen_titles.add(title)
-        search_results.append({
-            "title": title,
-            "url": index_data["urls"][idx],
-            "snippet": extract_snippet_sumy(document_text, num_sentences=3, snippet_length=600),
-            "score": round(score, 2)
-        })
-    return search_results
-
-
-@csrf_exempt
-def search_articles(request):
-    results = []
-    best_category = None
-    query = ""
-    main_title = ""
-
-    if request.method == "POST":
+# Fetch WHO indicators
+def fetch_indicators():
+    response = requests.get(f"{WHO_API_BASE_URL}GHO?format=json")
+    if response.status_code == 200:
         try:
-            if request.content_type == "application/json":
-                data = json.loads(request.body.decode('utf-8'))
-                query = data.get("query", "")
-            else:
-                query = request.POST.get("query", "")
-            if not query:
-                return JsonResponse({"error": "Query is required"}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
-        
-        best_category = detect_category(query)
-        if not best_category:
-            return JsonResponse({"error": "No relevant category found"}, status=400)
-        results = hybrid_search(query, best_category)
-        # Use extract_title to compute a shorter main title
-        main_title = extract_title(query)
+            # Safely navigate the JSON response structure
+            indicators = response.json().get("dimension", [{}])[0].get("code", [])
+            # Build the dictionary only for items with "display" and "code" keys
+            return {
+                item.get("display"): item.get("code")
+                for item in indicators
+                if "display" in item and "code" in item
+            }
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"Error parsing indicators data: {e}")
+            return {}
     else:
-        main_title = ""
+        print("Error fetching indicators from WHO API")
+        return {}
 
-    return render(request, "search_form.html", {
-        "category": best_category,
-        "results": results,
-        "main_title": main_title,
-        "query": query
-    })
+# Cache indicators for quicker lookup
+indicators = fetch_indicators()
+
+# Query WHO API
+def query_who_api(indicator_code):
+    url = f"{WHO_API_BASE_URL}GHO/{indicator_code}?format=json"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error querying WHO API: {e}")
+        return {"error": "No data found or API error"}
+
+# Format WHO API response
+def format_response(api_data):
+    try:
+        data_points = api_data["fact"]
+        results = []
+        for point in data_points:
+            region = point.get("dim", {}).get("REGION", "Unknown")
+            year = point.get("dim", {}).get("YEAR", "Unknown")
+            value = point.get("value", "N/A")
+            results.append(f"Region: {region}, Year: {year}, Value: {value}")
+        return "\n".join(results)
+    except KeyError:
+        return "No data available in the response"
+
+# Parse question and extract indicator code
+def parse_question(user_input):
+    doc = nlp(user_input)
+    keywords = [token.text.lower() for token in doc if token.is_alpha]
+
+    for keyword in keywords:
+        for display, code in indicators.items():
+            if keyword in display.lower():
+                return code
+    return None
+
+# Detect user intent
+def detect_intent(user_input):
+    doc = nlp(user_input)
+    
+    # Detect "summarize" intent
+    if any(token.lemma_ in ["summarize", "summary", "shorten", "condense"] for token in doc):
+        return "summarize"
+    
+    # Detect "search" intent (default for questions)
+    if user_input.lower().startswith(("what", "how", "does", "can", "is")):
+        return "search"
+    elif any(token.text.lower() in ["what", "how", "does", "can", "is"] for token in doc):
+        return "search"
+
+    return "search"  # Default to search if unsure
+
+# Django view function
+def assistant(request):
+    if request.method == "POST":
+        user_input = request.POST.get('request')
+        intent = detect_intent(user_input)
+
+        if intent == "search":
+            # Extract WHO indicator code from user input
+            indicator_code = parse_question(user_input)
+            if indicator_code:
+                # Query the WHO API
+                api_data = query_who_api(indicator_code)
+                # Format the API response for the user
+                response = format_response(api_data)
+                context = {
+                    'intent': 'search',
+                    'response': response
+                }
+            else:
+                # No matching WHO indicator found
+                context = {
+                    'intent': 'search',
+                    'response': "Sorry, I couldn't find relevant health data for your query."
+                }
+
+        elif intent == "summarize":
+            summary = summarize_document(user_input)
+            context = {
+                'intent': 'summarize',
+                'summary': summary,
+            }
+
+        return render(request, "medical_assistant/assistant.html", context)
+
+    # Render the assistant interface
+    return render(request, "medical_assistant/assistant.html")
