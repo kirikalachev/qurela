@@ -41,7 +41,25 @@ def conversation_list(request):
 def conversation_detail(request, conversation_id):
     conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
     messages = conversation.messages.all().order_by('timestamp')
-    return render(request, 'medical_assistant/conversation_detail.html', {'conversation': conversation, 'messages': messages})
+    
+    # Retrieve the most recent bot message that may contain search result JSON.
+    search_results_data = {}
+    latest_bot_message = conversation.messages.filter(sender='bot').order_by('-timestamp').first()
+    if latest_bot_message:
+        try:
+            search_results_data = json.loads(latest_bot_message.text)
+        except json.JSONDecodeError:
+            search_results_data = {}
+    
+    context = {
+        "conversation": conversation,
+        "messages": messages,
+        "main_title": search_results_data.get("main_title", ""),
+        "category": search_results_data.get("category", ""),
+        "results": search_results_data.get("results", []),
+        "query": search_results_data.get("query", "")
+    }
+    return render(request, 'medical_assistant/conversation_detail.html', context)
 
 @login_required
 def new_conversation(request):
@@ -50,50 +68,51 @@ def new_conversation(request):
 @login_required
 def send_message(request, conversation_id=None):
     conversation = None
-
     if conversation_id:
-        # If a conversation exists, get it.
         conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
 
     if request.method == 'POST':
         user_message = request.POST.get('message')
-
-        if user_message:  # Only proceed if the user typed something
+        if user_message:
             if not conversation:
-                # Create a new conversation if one doesn't exist.
                 conversation = Conversation.objects.create(user=request.user)
-
             # Save the user's message.
             Message.objects.create(conversation=conversation, sender='user', text=user_message)
-            
-            # --- Search Articles Logic for Chatbot Response ---
-            # Treat the user's message as a search query.
+
+            # --- Search Logic ---
             best_category = detect_category(user_message)
+            main_title = extract_title(user_message)
             if best_category:
                 results = hybrid_search(user_message, best_category)
-                main_title = extract_title(user_message)
                 if results:
-                    # Build an HTML response similar to your search_form template.
-                    response_html = f"<h2>Search Results for \"{main_title}\"</h2>"
-                    response_html += f"<h3>Category: {best_category}</h3><ul>"
-                    for result in results:
-                        response_html += "<li>"
-                        response_html += f"<a href=\"{result['url']}\" target=\"_blank\">{result['title']}</a><br>"
-                        response_html += f"<strong>Snippet:</strong> {result['snippet']}...<br>"
-                        response_html += f"<strong>Score:</strong> {result['score']}<br>"
-                        response_html += f"<strong>URL:</strong> <a href=\"{result['url']}\" target=\"_blank\">{result['url']}</a>"
-                        response_html += "</li>"
-                    response_html += "</ul>"
+                    data = {
+                        "main_title": main_title,
+                        "category": best_category,
+                        "results": results,
+                        "query": user_message
+                    }
                 else:
-                    response_html = "<p>No relevant results found for your query.</p>"
+                    data = {
+                        "main_title": main_title,
+                        "category": best_category,
+                        "results": [],
+                        "query": user_message,
+                        "error": "No relevant results found for your query."
+                    }
             else:
-                response_html = "<p>No relevant category found for your query.</p>"
+                data = {
+                    "main_title": main_title,
+                    "category": None,
+                    "results": [],
+                    "query": user_message,
+                    "error": "No relevant category found for your query."
+                }
 
-            # Save the bot's response (HTML formatted).
-            Message.objects.create(conversation=conversation, sender='bot', text=response_html)
+            # Save the bot's response as a JSON string.
+            Message.objects.create(conversation=conversation, sender='bot', text=json.dumps(data))
 
+            # Redirect to the conversation detail page.
             return redirect('conversation_detail', conversation_id=conversation.id)
-
     return redirect('conversation_list')
 
 
