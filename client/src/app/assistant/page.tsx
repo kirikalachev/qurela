@@ -169,7 +169,7 @@ export default function Home() {
                   autoFocus
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  className="flex-[8] m-4 outline-none bg-transparent"
+                  className="flex-[8] m-4 outline-none bg-transparent dark:text-d-cadet-gray"
                 ></textarea>
                 <div className="flex-[2] flex justify-between m-2">
                   <select

@@ -266,7 +266,7 @@ export default function ForumPage() {
               type="submit"
               className="absolute right-2 bg-marian-blue text-white p-1 rounded-full"
             >
-              🔍
+              <Search size={20} color="white"/>
             </button>
           </form>
           {/* Button to clear category filter if active */}
@@ -308,39 +308,39 @@ export default function ForumPage() {
             </div>
             <div className="flex gap-4 text-sm">
               <button
-                className="text-green-600 hover:text-green-800"
+                className="text-rich-black dark:text-d-charcoal flex gap-1 items-center"
                 onClick={() => handleVote(post.id, "upvote")}
               >
                 <ThumbsUp size={20} />
                 {post.upvotes}
               </button>
               <button
-                className="text-red-600 hover:text-red-800"
+                className="text-rich-black dark:text-d-charcoal flex gap-1 items-center"
                 onClick={() => handleVote(post.id, "downvote")}
               >
                 <ThumbsDown size={20} />
                 {post.downvotes}
               </button>
               <button
-                className="text-gray-600 hover:text-blue-500"
+                className="text-rich-black dark:text-d-charcoal flex gap-1 items-center"
                 onClick={() => toggleComments(post.id)}
               >
                 <MessageCircle size={20} />
                 Коментиране
               </button>
-              <button className="text-gray-600 hover:text-blue-500" onClick={() => copyToClipboard(post.id)}>
+              <button className="text-rich-black dark:text-d-charcoal flex gap-1 items-center" onClick={() => copyToClipboard(post.id)}>
               <Share2 size={20} />
               Споделяне
               </button>
               <button 
-                className="text-gray-600 hover:text-blue-500"
+                className="text-rich-black dark:text-d-charcoal flex gap-1 items-center"
                 onClick={() => navigateToPost(post.id)}
               >
                 <ExternalLink size={20} /> Отвори публикация
               </button>
               {post.category ? (
                 <p
-                  className="text-blue-500 hover:underline"
+                className="text-marian-blue flex gap-1 items-center"
                 >
                   #{post.category}
                 </p>
