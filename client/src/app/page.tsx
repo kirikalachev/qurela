@@ -1,119 +1,156 @@
 'use client';
-import { useState } from 'react';
+
 import Image from 'next/image';
-import ArrowRight from '@/app/arrow-right.svg';
+import Link from 'next/link';
+import { useState, useEffect } from "react";
+import LoadingScreen from "../components/loadingScreen";
+import { motion } from "framer-motion";
 
-import '@/app/style.css';
+export default function App() {
+  const [scrollY, setScrollY] = useState(0);
 
-export default function Home() {
-  const [inputValue, setInputValue] = useState('Проверка на информация');
-  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setInputValue(e.target.value);
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+      console.log(window.scrollY);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  const redirectToAssistant = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); 
-    window.location.href = '/assistant'; 
-  };
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 1800);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <main className="flex flex-col items-center min-h-[100vh] pt-[40%] md:pt-[15%] gap-3 justify-center">
-      <h2 className="text-2xl md:text-3xl font-bold">{inputValue}</h2>
-      <div className="flex justify-center items-center flex-col w-full">
-        <form
-          className="bg-white flex justify-between md:justify-center items-center w-[90%] h-fit md:w-[55%] md:h-[55px] m-[1vh] p-[7px] rounded-2xl md:rounded-full md:flex-nowrap flex-wrap"
-          onSubmit={redirectToAssistant}
+    <main className="bg-white flex flex-col items-center min-h-screen pt-[150px] md:pt-[10%]">
+      {/* Hero Section */}
+      <section className="flex flex-col md:flex-row w-[90%] pb-20">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex-1 flex flex-col gap-8"
         >
-          <textarea
-          className='flex-[100%] md:hidden outline-none w-full h-[120px] px-1 text-basis whitespace-nowrap overflow-hidden '
-          >
+          <h2 className="text-marian-blue text-3xl font-medium">
+            Проверена медицинска информация на едно място.
+          </h2>
+          <p className="text-[#2e2e2e] text-xl">
+            Qurela предлага{" "}
+            <span className="font-semibold text-inherit">бърза и точна проверка</span> на медицински факти с помощта на изкуствен интелект.
+          </p>
 
-          </textarea>
-          <select
-            className="p-2 md:h-[100%] bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
-            onChange={handleSelectChange}
-          >
-            <option data-type="check" value="Проверка на информация">Проверка</option>
-            <option data-type="question" value="Задайте въпрос">Въпрос</option>
-            <option data-type="summarize" value="Обобщи информация">Обобщение</option>
-          </select>
-          <input
-            className="outline-none w-full max-h-6 px-1 text-basis hidden md:block"
-            placeholder="Съобщение до Qurela"
-            autoFocus
-          />
-          <button
-            className="p-2 md:h-[100%] aspect-square bg-marian-blue rounded-full flex justify-center items-center cursor-pointer"
-            title="Изпращане"
-          >
-            <Image src={ArrowRight} alt=" " />
-          </button>
-        </form>
-      </div>
-
-      <div className="w-[90%] h-[60vh] flex justify-between gap-y-7 gap-x-14 flex-col md:flex-row md:w-[65%] md:h-60 ">
-        <div className="bg-platinum-gray rounded-2xl flex-[4] overflow-hidden flex-1">
-          <h3 className="w-[100%] bg-jordy-blue p-3 font-semibold text-base">Последни чатове</h3>
-          <ul className="p-3 text-sm">
-            <li>Какви са симптомите на диабет тип 2 и как се диагностицира?</li>
-            <li>Каква е разликата между вирусна и бактериална инфекция?</li>
-            <li>Какви са основните рискови фактори за сърдечно-съдови заболявания?</li>
-            <li>Какво е значение на имунната система и какво може да я отслаби?</li>
-          </ul>
-        </div>
-
-        <div className="flex flex-col bg-platinum-gray rounded-2xl flex-[3] overflow-hidden flex-1">
-          <h3 className="w-[100%] bg-brandeis-blue p-3 text-white font-semibold text-base">Избор на редактора</h3>
-          <span className="w-full h-[100%] flex justify-center items-center">
-            <p className="text-base font-bold text-gray-500">Празно</p>
-          </span>
-        </div>
-      </div>
-      {/* forum */}
-      <h2 className="text-2xl md:text-3xl font-bold self-start mx-[5%] md:self-center md:mx-[0] mt-[5%]">
-        Трендинг
-      </h2>
-      <div className="bg-white flex justify-between md:justify-center items-center w-[90%] md:w-[65%] m-[1vh] rounded-2xl md:flex-nowrap flex-wrap">
-        <div className='w-full bg-Anti-flash-white rounded-xl p-2'>
-          <div className='w-full flex justify-between'>
-            <div className='flex align-center'>
-              <div>
-                <img
-                  src="https://picsum.photos/200"  // Direct URL of the image
-                  alt="Random Image"
-                  className='h-10 aspect-square rounded-full'
-                />
-              </div>
-              <div>
-                <h3>
-                  Ivan Ivanov
-                </h3>
-                <p>
-                  3years ago
-                </p>
-              </div>
-            </div>
-
-            <div>menu</div>
+          <div className="flex gap-3 select-none">
+          <Link href="/auth/signin" className="px-5 py-2 rounded-xl bg-marian-blue text-base flex justify-center items-center">
+              <span className="text-white">Вход</span>
+            </Link>
+            <Link href="/auth/signup" className="px-5 py-2 rounded-xl bg-safety-orange text-base flex justify-center items-center">
+              <span className="text-white">Да започваме!</span>
+            </Link>
           </div>
 
-          <div>
-            <h3>Lorem ipsum lorem</h3>
-            <p>
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex, quaerat perferendis. Nobis, neque harum. Blanditiis, velit sequi! Ullam velit odio laborum, cupiditate quae, asperiores, excepturi necessitatibus voluptatum quis aspernatur eum.
+          <div className="w-[70%] h-[2px] bg-gray-400"></div>
+
+          <div className="flex gap-3 items-center">
+            <span className="text-2xl text-safety-orange font-semibold">126 592</span>
+            <span className="text-lg text-marian-blue font-semibold">Проверени твърдения</span>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="flex-1 flex justify-center md:justify-end mt-8 md:mt-0"
+        >
+          <img src="/qurela-image.png" alt="" width={600} height={600} className="max-w-full h-auto" />
+        </motion.div>
+      </section>
+
+      <img src="/wave.png" alt="wave" className="w-full pt-10" />
+
+      {/* Goals Section */}
+      <section className="bg-[#EBF3FF] w-full flex flex-col md:flex-row gap-4 items-center py-12 px-6">
+        <div className="p-8 flex-1 rounded-lg overflow-hidden">
+          <h2 className="text-marian-blue text-3xl font-bold mb-8">
+            Нашите цели
+          </h2>
+          <div className="relative goals-container flex flex-col items-start">
+            <div className="absolute left-[5px] flex flex-col gap-10 top-0 h-full border-l-4 border-marian-blue"></div>
+
+            <div className="flex items-center gap-4 transition-all duration-300 cursor-pointer">
+              <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
+              <p className="goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
+                Бърза, точна и автоматизирана проверка на медицинска информация.
+              </p>
+            </div>
+            <div className="flex items-center gap-4 transition-all duration-300 cursor-pointer mt-8">
+              <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
+              <p className="goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
+                Борба с дезинформацията в здравния сектор.
+              </p>
+            </div>
+            <div className="flex items-center gap-4 transition-all duration-300 cursor-pointer mt-8">
+              <div className="w-4 h-4 bg-marian-blue rounded-full"></div>
+              <p className="goal-text text-gray-800 text-base transition-all duration-300 ease-in-out">
+                Улесняваме създаването на надеждно медицинско съдържание.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <LoadingScreen />
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="w-full flex bg-[#EBF3FF] justify-center flex-col items-center gap-10 pb-20">
+        <h2 className="text-marian-blue text-3xl font-bold mb-8">Нашият екип</h2>
+        <div className="flex flex-col md:flex-row justify-between w-full md:w-1/2 gap-8">
+          <div className="flex flex-col justify-center items-center">
+            <img src="/roblox.png" alt="Кирил" className="w-32 h-auto" />
+            <p className="text-[#2e2e2e] text-lg mt-4">
+              Кирил, 16
             </p>
           </div>
 
-          <div className='flex justify-between items-center p-2'>
-            <div className='flex justify-between gap-x-2'>
-              <div>Like</div>
-              <div>Comment</div>
-              <div>Share</div>
-            </div>
-            <div>Topic</div>
+          <div className="flex flex-col justify-center items-center">
+            <img src="/roblox.png" alt="Християн" className="w-32 h-auto" />
+            <p className="text-[#2e2e2e] text-lg mt-4">
+              Християн, 16
+            </p>
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="relative overflow-hidden w-full bg-[#EBF3FF] flex flex-col gap-8 justify-center items-center h-80 md:h-[500px] rounded-t-xl">
+  <div className="relative w-full h-full md:h-[500px]">
+    <span className="bg-black opacity-70 w-full h-full absolute top-0 left-0 z-[10]"></span>
+    <img 
+      src="/people.jpg" 
+      alt="People" 
+      className={`w-full h-full transition-transform duration-800 ${isScrolled ? 'scale-110' : 'scale-100'} object-cover md:object-contain md:h-auto`}
+    />
+  </div>
+  <div className="absolute top-1/2 md:top-[40%] transform -translate-y-1/2 md:transform-none z-[11] flex flex-col gap-3 items-center">
+    <h2 className="text-white text-3xl font-semibold text-center">Имаш още въпроси?</h2>
+    <div className="flex gap-4 select-none">
+      <Link href="/auth/signup" className="px-4 py-3 rounded-2xl bg-safety-orange text-white text-lg flex items-center">
+        <span className="text-white">Да започваме!</span>
+      </Link>
+      <Link href="/info#faq" className="px-8 py-3 rounded-2xl bg-marian-blue text-white text-lg flex items-center">
+        <span className="text-white">ЧЗВ</span>
+      </Link>
+    </div>
+  </div>
+</section>
+
     </main>
   );
 }

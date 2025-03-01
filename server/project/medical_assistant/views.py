@@ -1,12 +1,104 @@
-from django.shortcuts import render
-import re
-import spacy
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from medical_assistant.serializers import ConversationSerializer, MessageSerializer
+from django.shortcuts import get_object_or_404
+from .models import Conversation, Message
+from .serializers import ConversationSerializer, MessageSerializer
+import json
 import requests
+WHO_API_BASE_URL = "https://apps.who.int/gho/athena/api/"
 
-# Load SpaCy NLP model
-nlp = spacy.load("en_core_web_sm")
+class ConversationRenameAPIView(APIView):
+    """Rename a specific conversation."""
+    permission_classes = [IsAuthenticated]
 
-WHO_API_BASE_URL = "http://apps.who.int/gho/athena/api/"
+    def patch(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        new_name = request.data.get('name')
+
+        if not new_name:
+            return Response({'error': 'New name is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        conversation.name = new_name
+        conversation.save()
+
+        return Response({'message': 'Conversation renamed successfully'}, status=status.HTTP_200_OK)
+
+
+class ConversationDeleteAPIView(APIView):
+    """Delete a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        conversation.delete()  # Изтрива кореспонденцията
+        return Response({'message': 'Conversation deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+class ConversationListAPIView(APIView):
+    """Retrieve all conversations for the authenticated user."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        conversations = Conversation.objects.filter(user=request.user).order_by('-created_at')
+        serializer = ConversationSerializer(conversations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ConversationDetailAPIView(APIView):
+    """Retrieve messages in a specific conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, conversation_id):
+        conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+        serializer = MessageSerializer(conversation.messages.all(), many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NewConversationAPIView(APIView):
+    """Create a new conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        conversation = Conversation.objects.create(user=request.user)
+        return Response({'message': 'New conversation created', 'conversation_id': conversation.id}, status=status.HTTP_201_CREATED)
+
+
+class SendMessageAPIView(APIView):
+    """Send a message in an existing or new conversation."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, conversation_id=None):
+        try:
+            data = json.loads(request.body)
+            user_message = data.get('message')
+            mode = data.get('mode', 'default')  # Optional mode
+
+            if not user_message:
+                return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if conversation_id:
+                conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+            else:
+                conversation = Conversation.objects.create(user=request.user)
+
+            # Save user message
+            Message.objects.create(conversation=conversation, sender='user', text=user_message)
+
+            # Generate bot response (placeholder logic)
+            bot_response = f"Bot response to: {user_message} (Mode: {mode})"
+            Message.objects.create(conversation=conversation, sender='bot', text=bot_response)
+
+            return Response({'conversation_id': conversation.id, 'response': bot_response}, status=status.HTTP_200_OK)
+
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON data'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# ///responses:///
 
 def get_ngrams(doc, n):
     tokens = [token for token in doc if token.is_alpha]

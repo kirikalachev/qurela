@@ -6,7 +6,9 @@ const Metadata = () => {
     <head>
       <title>Qurela</title>
       <meta name="description" content="Qurela" />
-      {/* Other metadata */}
+      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/ico" href="/favicon.ico" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     </head>
   );
 }
