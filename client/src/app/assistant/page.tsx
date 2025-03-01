@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
 import Trash from '@/app/trash.svg';
@@ -23,12 +23,10 @@ export default function Home() {
 
   const ChatComponent = () => {
     const [showCopyText, setShowCopyText] = useState(false);
-    const [savedChats, setSavedChats] = useState<any[]>([]);
-    const [currentConversation, setCurrentConversation] = useState<any>(null);
-    const [conversationMessages, setConversationMessages] = useState<any[]>([]);
+    const [savedChats, setSavedChats] = useState([]);
     const [inputText, setInputText] = useState('');
     const [selectedMode, setSelectedMode] = useState('Проверка на информация');
-    const [response, setResponse] = useState('');
+    const [response, setResponse] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -43,17 +41,17 @@ export default function Home() {
       if (mode) {
         setSelectedMode(mode);
       }
-      // Optionally, auto-submit if a message was passed
+      // Auto-submit if a message was passed
       if (message) {
         handleAutoSubmit(message, mode || selectedMode);
       }
     }, []);
 
     // Function to automatically submit a chat message (extracted from query)
-    const handleAutoSubmit = async (message: string, mode: string) => {
+    const handleAutoSubmit = async (message, mode) => {
       setLoading(true);
       setError('');
-      setResponse('');
+      setResponse(null);
       const token = Cookies.get("token");
       if (!token) {
         setError("Не сте влезли в системата. Моля, влезте.");
@@ -77,7 +75,7 @@ export default function Home() {
           throw new Error(data.error || `Грешка: ${res.status}`);
         }
         setResponse(data.response);
-      } catch (err: any) {
+      } catch (err) {
         setError(err.message || 'Нещо се обърка.');
       } finally {
         setLoading(false);
@@ -85,11 +83,11 @@ export default function Home() {
     };
 
     // Normal form submission (if user makes edits and resubmits)
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e) => {
       e.preventDefault();
       setLoading(true);
       setError('');
-      setResponse('');
+      setResponse(null);
       const token = Cookies.get("token");
       if (!token) {
         setError("Не сте влезли в системата. Моля, влезте.");
@@ -113,7 +111,7 @@ export default function Home() {
           throw new Error(data.error || `Грешка: ${res.status}`);
         }
         setResponse(data.response);
-      } catch (err: any) {
+      } catch (err) {
         setError(err.message || 'Нещо се обърка.');
       } finally {
         setLoading(false);
@@ -121,7 +119,7 @@ export default function Home() {
     };
 
     // Function to delete a conversation
-    const handleDeleteConversation = async (conversationId: number) => {
+    const handleDeleteConversation = async (conversationId) => {
       const token = Cookies.get("token");
       if (!token) return;
 
@@ -135,7 +133,6 @@ export default function Home() {
           throw new Error('Не може да се изтрие кореспонденцията');
         }
 
-        // Update the saved chats list
         setSavedChats(prevChats => prevChats.filter(chat => chat.id !== conversationId));
         alert('Кореспонденцията беше изтрита успешно!');
       } catch (err) {
@@ -144,7 +141,7 @@ export default function Home() {
       }
     };
 
-    // Displaying chat history (Последни чатове) fetched from the backend
+    // Fetch saved chats from the backend
     useEffect(() => {
       const token = Cookies.get("token");
       if (!token) return;
@@ -159,7 +156,6 @@ export default function Home() {
         .catch(err => console.error("Error fetching conversations:", err));
     }, []);
 
-    // Render the chat interface
     return (
       <>
         {showCopyText && <CopyText />}
@@ -196,57 +192,85 @@ export default function Home() {
               </form>
 
               <div className="relative bg-white rounded-xl flex-[5] overflow-hidden flex flex-col dark:bg-d-rich-black">
-                <h3 className="flex-[2] border-l-green-500 border-l-[7px] flex items-center">
-                  <span className="dark:text-d-cadet-gray mx-2 text-base font-semibold">
-                    {loading ? 'Зареждане...' : 'Резултат'}
-                  </span>
-                </h3>
-                <button
-                  onClick={() => {
-                    const element = document.querySelector('.copy-text');
-                    if (element && element.textContent) {
-                      navigator.clipboard.writeText(element.textContent)
-                        .then(() => {
-                          setShowCopyText(true);
-                          setTimeout(() => setShowCopyText(false), 2000);
-                        });
-                    }
-                  }}
-                  className="absolute top-2 right-2 rounded-xl transition-all active:bg-gray-300 flex items-center justify-center w-8 h-8"
-                  title="Копиране"
-                >
-                  <Image src={Copy} alt="Копиране" />
-                </button>
-                <p className="flex-[9] h-max border-l-platinum-gray-300 dark:border-l-d-charcoal-300 border-l-[7px] flex">
-                  <span className="dark:text-d-cadet-gray mx-2 my-5 text-sm overflow-y-auto h-[150px] copy-text">
-                    {error ? `Грешка: ${error}` : response || 'Тук ще се появи отговорът от сървъра.'}
-                  </span>
-                </p>
-                <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
-                  <div onClick={() => {
-                    // Download functionality
-                    const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
-                    const outputContent = response ? `Output: ${response}` : "Output: (няма наличен отговор)";
-                    const content = `${inputContent}\n\n${outputContent}`;
-                    const blob = new Blob([content], { type: "text/plain" });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "chat_output.txt";
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                  }} className="flex items-center cursor-pointer">
-                    <Image src={Download} alt="Изтегляне" />
-                    <span>Изтегляне</span>
-                  </div>
-                  <div className="flex items-center cursor-pointer">
-                    <Image src={Trash} alt="Изтриване" />
-                    <span>Изтриване</span>
-                  </div>
-                </div>
-              </div>
+  <h3 className="flex-[2] border-l-green-500 border-l-[7px] flex items-center">
+    <span className="dark:text-d-cadet-gray mx-2 text-base font-semibold">
+      {loading
+        ? 'Зареждане...'
+        : response && typeof response === 'object' && response.main_title
+        ? response.main_title
+        : 'Резултат'}
+    </span>
+  </h3>
+  <button
+    onClick={() => {
+      const element = document.querySelector('.copy-text');
+      if (element && element.textContent) {
+        navigator.clipboard.writeText(element.textContent).then(() => {
+          setShowCopyText(true);
+          setTimeout(() => setShowCopyText(false), 2000);
+        });
+      }
+    }}
+    className="absolute top-2 right-2 rounded-xl transition-all active:bg-gray-300 flex items-center justify-center w-8 h-8"
+    title="Копиране"
+  >
+    <Image src={Copy} alt="Копиране" />
+  </button>
+  <div className="flex-[9] h-max border-l-platinum-gray-300 dark:border-l-d-charcoal-300 border-l-[7px] flex">
+    <span className="dark:text-d-cadet-gray mx-2 my-5 text-sm overflow-y-auto h-[150px] copy-text">
+      {error
+        ? `Грешка: ${error}`
+        : response && typeof response === 'object'
+        ? (
+          <div>
+            <p>Category: {response.category}</p>
+            <p>Query: {response.query}</p>
+            <ul>
+              {response.results?.map((item, index) => (
+                <li key={index}>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer">
+                    {item.title}
+                  </a>
+                  <p>{item.snippet}</p>
+                  <p>Score: {item.score}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+        : response || 'Тук ще се появи отговорът от сървъра.'}
+    </span>
+  </div>
+  <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
+    <div
+      onClick={() => {
+        const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
+        const outputContent = response
+          ? `Output: ${typeof response === 'object' ? JSON.stringify(response, null, 2) : response}`
+          : "Output: (няма наличен отговор)";
+        const content = `${inputContent}\n\n${outputContent}`;
+        const blob = new Blob([content], { type: "text/plain" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "chat_output.txt";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }}
+      className="flex items-center cursor-pointer"
+    >
+      <Image src={Download} alt="Изтегляне" />
+      <span>Изтегляне</span>
+    </div>
+    <div className="flex items-center cursor-pointer">
+      <Image src={Trash} alt="Изтриване" />
+      <span>Изтриване</span>
+    </div>
+  </div>
+</div>
+
             </div>
 
             {/* Right Panel – Chat history */}

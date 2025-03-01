@@ -191,46 +191,41 @@ export default function ForumPage() {
         ? `http://127.0.0.1:8000/forum/posts/${postId}/upvote/`
         : `http://127.0.0.1:8000/forum/posts/${postId}/downvote/`;
   
-    try {
-      await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
-  
-      const response = await axios.get(`http://127.0.0.1:8000/forum/posts/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-  
-      const updatedPosts = response.data.map((newPost: Post) => {
-        const oldPost = allPosts.find((p) => p.id === newPost.id);
-        return {
-          ...newPost,
-          comments: oldPost?.comments ?? [],
-        };
-      });
-      setAllPosts(updatedPosts);
-      let filteredPosts = updatedPosts;
-      if (searchQuery.trim() !== '') {
-        filteredPosts = filteredPosts.filter(post =>
-          post.title.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      if (activeCategory !== null) {
-        filteredPosts = filteredPosts.filter(post => post.category?.id === activeCategory);
-      }
-      setPosts(filteredPosts);
-    } catch (error) {
-      console.error("Грешка при гласуване:", error);
-  
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                upvotes: type === "upvote" ? Math.max((post.upvotes ?? 1) - 1, 0) : post.upvotes,
-                downvotes: type === "downvote" ? Math.max((post.downvotes ?? 1) - 1, 0) : post.downvotes,
-              }
-            : post
-        )
-      );
-    }
+        try {
+          await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+        
+          const response = await axios.get(`http://127.0.0.1:8000/forum/posts/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        
+          const updatedPosts = response.data.map((newPost: Post) => {
+            const oldPost = allPosts.find((p) => p.id === newPost.id);
+            return {
+              ...newPost,
+              comments: oldPost?.comments ?? [],
+            };
+          });
+        
+          // ✅ Sort posts from newest to oldest
+          updatedPosts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+          setAllPosts(updatedPosts);
+        
+          let filteredPosts = updatedPosts;
+          if (searchQuery.trim() !== '') {
+            filteredPosts = filteredPosts.filter(post =>
+              post.title.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+          }
+          if (activeCategory !== null) {
+            filteredPosts = filteredPosts.filter(post => post.category?.id === activeCategory);
+          }
+        
+          setPosts(filteredPosts);
+        } catch (error) {
+          console.error("Грешка при гласуване:", error);
+        }
+        
   };
   
   if (loading) {

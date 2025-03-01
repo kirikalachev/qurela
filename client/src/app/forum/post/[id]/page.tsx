@@ -34,6 +34,23 @@ const PostDetailPage = () => {
   // Get token from cookies
   const token = Cookies.get('token');
 
+  const handleVote = async (type: "upvote" | "downvote") => {
+    if (!token) return;
+    const url = `http://127.0.0.1:8000/forum/posts/${post!.id}/${type}/`;
+    try {
+      await axios.post(url, {}, { headers: { Authorization: `Bearer ${token}` } });
+      // Option 1: Refetch the post details
+      const response = await axios.get(`http://127.0.0.1:8000/forum/posts/${post!.id}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      setPost(response.data);
+    } catch (error) {
+      console.error("Vote error:", error);
+    }
+  };
+  
+
   // Fetch post details
   useEffect(() => {
     if (!token) {
@@ -114,15 +131,18 @@ const PostDetailPage = () => {
           <p className="text-gray-700 dark:text-d-cadet-gray">{post.content}</p>
         </div>
         <div className="flex gap-4 text-sm">
-          <button className="text-green-600 hover:text-green-800">
-            👍 {post.upvotes}
-          </button>
-          <button className="text-red-600 hover:text-red-800">
-            👎 {post.downvotes}
-          </button>
-          <button className="text-gray-600 hover:text-blue-500">
-            💬 Comment
-          </button>
+        <button 
+          className="text-green-600 hover:text-green-800"
+          onClick={() => handleVote("upvote")}
+        >
+          👍 {post.upvotes}
+        </button>
+        <button 
+          className="text-red-600 hover:text-red-800"
+          onClick={() => handleVote("downvote")}
+        >
+          👎 {post.downvotes}
+        </button>
           <button className="text-gray-600 hover:text-blue-500" onClick={() => copyToClipboard(post.id)}>
             🔗 Споделяне
           </button>
