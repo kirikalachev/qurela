@@ -44,7 +44,7 @@ export default function Footer() {
               <h2 className='uppercase font-semibold text-lg'>Свържи се с нас</h2>
               <ul>
               <li>                
-                <Link href="https://instagram.com/qurela" target="_blank" rel="noopener noreferrer"  className="flex items-center gap-2">
+                <Link href="https://instagram.com/qurela.team" target="_blank" rel="noopener noreferrer"  className="flex items-center gap-2">
                   <InstagramIcon size={24} stroke="currentColor" className="dark:stroke-white" />
                   Qurela
                 </Link>
