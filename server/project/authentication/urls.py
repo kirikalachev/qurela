@@ -1,10 +1,10 @@
-from django.urls import path, include
-from . import views
+from django.urls import path
+from .views import signup, verify_email, signin, signout, account
 
 urlpatterns = [
-    path('signup', views.signup, name="signup"),
-    path('confirm', views.confirm, name="confirm"),
-    path('signin/', views.signin, name="signin"),
-    path('signout', views.signout, name='signout'),
-    path('account', views.account, name="account")
+    path('signup/', signup, name='signup'),
+    path("verify_email/", verify_email, name="verify_email"),  # Fixed name
+    path('signin/', signin, name='signin'),  # <== This must be included
+    path('signout/', signout, name='signout'),
+    path('account/', account, name='account'),
 ]
