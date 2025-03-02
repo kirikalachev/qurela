@@ -1,11 +1,8 @@
-'use client';
-import { usePathname } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NavigationBar from '@/components/navBar';
 import Footer from '@/components/footer';
-import { CreatePostProvider } from "@/context/CreatePostContext"; 
-import Metadata from "@/app/metadata"; 
+import { CreatePostProvider } from "@/context/CreatePostContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,24 +14,39 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  const pathname = usePathname();
+export const metadata = {
+  title: "Qurela", // ✅ Correct Title
+  description: "Проверена медицинска информация на едно място.",
+  openGraph: {
+    title: "Qurela",
+    description: "Проверена медицинска информация на едно място.",
+    url: "https://www.qurela.com/",
+    type: "website",
+    images: [
+      {
+        url: "https://www.qurela.com/people.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Qurela Banner",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Qurela",
+    description: "Проверена медицинска информация на едно място.",
+    images: ["https://www.qurela.com/people.jpg"],
+  },
+};
 
-  const isSignInPage = pathname === "/auth/signin";
-  const isSignUpPage = pathname === "/auth/signup";
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <Metadata /> {/* ✅ Added Metadata component */}
       <body className="bg-gradient-to-b from-alice-blue to-uranian-blue dark:bg-gradient-to-b dark:from-night-color dark:to-night-color min-h-[100vh]">
         <CreatePostProvider>
-          {!isSignInPage && !isSignUpPage && <NavigationBar />}
+          <NavigationBar />
           {children}
-          {!isSignInPage && !isSignUpPage && <Footer />}
+          <Footer />
         </CreatePostProvider>
       </body>
     </html>
