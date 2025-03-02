@@ -4,6 +4,7 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import ProfileAvatar from "@/components/profileAvatar";
 
 interface ProfileData {
   username: string;
@@ -12,7 +13,6 @@ interface ProfileData {
   last_name: string;
   profilePic: string | null;
 }
-
 
 const Profile = () => {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -46,7 +46,6 @@ const Profile = () => {
       });
   }, [router]);
   
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (profileData) {
@@ -54,7 +53,6 @@ const Profile = () => {
     }
   };
   
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
@@ -65,8 +63,8 @@ const Profile = () => {
     e.preventDefault();
     const token = Cookies.get("token");
     if (!token || !profileData) {
-        router.push("/auth/signin");
-        return;
+      router.push("/auth/signin");
+      return;
     }
   
     const formData = new FormData();
@@ -75,28 +73,23 @@ const Profile = () => {
     formData.append("last_name", profileData.last_name);
     formData.append("username", profileData.username);
     if (selectedFile) {
-        formData.append("profilePic", selectedFile);
+      formData.append("profilePic", selectedFile);
     }
   
     try {
-        await axios.put("http://127.0.0.1:8000/api/account/", formData, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "multipart/form-data",
-            },
-            withCredentials: true,
-        });
+      await axios.put("http://127.0.0.1:8000/api/account/", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+        withCredentials: true,
+      });
   
-        // ✅ Refresh the page after successful update
-        window.location.reload();
+      window.location.reload();
     } catch (error: any) {
-        setError(error.response?.data?.detail || "Failed to update profile data.");
+      setError(error.response?.data?.detail || "Failed to update profile data.");
     }
   };
-  
-
-
-
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-500">Error: {error}</p>;
@@ -106,17 +99,10 @@ const Profile = () => {
     <main className="w-full flex justify-center bg-gray-100 py-[12vh]">
       <div className="w-[600px] bg-white shadow-lg rounded-lg p-6">
         <div className="flex flex-col items-center border-b pb-4">
-          {profileData?.profilePic ? (
-            <img
-              src={profileData.profilePic}
-              alt="Profile Picture"
-              className="w-32 h-32 rounded-full border"
-            />
-          ) : (
-            <div className="w-32 h-32 bg-gray-300 rounded-full flex items-center justify-center text-xl font-bold">
-              {profileData?.name?.[0] || "?"}
-            </div>
-          )}
+          <ProfileAvatar
+            profilePic={profileData.profilePic}
+            username={profileData.username}
+          />
           <label className="mt-3 cursor-pointer text-blue-600 hover:underline">
             Change Profile Picture
             <input type="file" className="hidden" onChange={handleFileChange} />
@@ -124,51 +110,51 @@ const Profile = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-  <div>
-    <label className="block font-medium text-gray-700">First Name</label>
-    <input
-      type="text"
-      name="first_name"
-      value={profileData?.first_name || ""}
-      onChange={handleInputChange}
-      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-  <div>
-    <label className="block font-medium text-gray-700">Last Name</label>
-    <input
-      type="text"
-      name="last_name"
-      value={profileData?.last_name || ""}
-      onChange={handleInputChange}
-      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-  <div>
-    <label className="block font-medium text-gray-700">Username</label>
-    <input
-      type="text"
-      name="username"
-      value={profileData?.username || ""}
-      onChange={handleInputChange}
-      className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
-    />
-  </div>
-  <div>
-    <label className="block font-medium text-gray-700">Email</label>
-    <input
-      type="email"
-      name="email"
-      value={profileData?.email || ""}
-      disabled
-      className="w-full border bg-gray-100 rounded-md px-3 py-2 cursor-not-allowed"
-    />
-  </div>
-  <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700">
-    Save Changes
-  </button>
-</form>
-
+          {/* You can re-enable first/last name inputs if desired */}
+          {/* <div>
+            <label className="block font-medium text-gray-700">First Name</label>
+            <input
+              type="text"
+              name="first_name"
+              value={profileData?.first_name || ""}
+              onChange={handleInputChange}
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">Last Name</label>
+            <input
+              type="text"
+              name="last_name"
+              value={profileData?.last_name || ""}
+              onChange={handleInputChange}
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div> */}
+          <div>
+            <label className="block font-medium text-gray-700">Username</label>
+            <input
+              type="text"
+              name="username"
+              value={profileData?.username || ""}
+              onChange={handleInputChange}
+              className="w-full border rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              value={profileData?.email || ""}
+              disabled
+              className="w-full border bg-gray-100 rounded-md px-3 py-2 cursor-not-allowed"
+            />
+          </div>
+          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700">
+            Save Changes
+          </button>
+        </form>
       </div>
     </main>
   );

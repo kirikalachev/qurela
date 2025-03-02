@@ -24,7 +24,6 @@ export default function CustomSelect({ onChange }: SelectOptionProps) {
 
   const router = useRouter();
 
-  // Check for user authentication via token cookie
   const isAuthenticated = () => {
     const token = Cookies.get("token");
     return !!token;
@@ -45,7 +44,6 @@ export default function CustomSelect({ onChange }: SelectOptionProps) {
           },
         });
         console.log("Categories fetched successfully:", response.data);
-        // Assuming response.data is an array of category objects with id and name
         if (Array.isArray(response.data)) {
           setOptions(response.data);
         } else {
@@ -96,14 +94,14 @@ export default function CustomSelect({ onChange }: SelectOptionProps) {
         }}
         onFocus={() => setIsOpen(true)}
         placeholder="Изберете тема"
-        className="dark:bg-d-charcoal w-full p-2 bg-white border border-gray-300 rounded-lg shadow-md text-left focus:ring-2 focus:ring-blue-500"
+        className="dark:text-d-cadet-gray dark:bg-d-charcoal w-full p-2 bg-white border border-gray-300 rounded-lg shadow-md text-left focus:ring-2 focus:ring-blue-500"
       />
       {isOpen && (
-        <ul className="dark:bg-d-charcoal overflow-y-auto absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40">
+        <ul className="dark:text-d-cadet-gray dark:bg-d-charcoal overflow-y-auto absolute w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-40">
           {filteredOptions.map((option) => (
             <li
               key={option.id}
-              className="p-2 hover:bg-blue-100 cursor-pointer"
+              className="dark:text-d-cadet-gray p-2 dark:hover:bg-d-gunmetal hover:bg-blue-100 cursor-pointer"
               onClick={() => {
                 setSelected(option);
                 setSearchTerm(option.name);

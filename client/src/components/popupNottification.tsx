@@ -59,7 +59,7 @@ const PopupNotification = () => {
     return () => {
       if (closeTimeout.current) clearTimeout(closeTimeout.current);
     };
-  }, []);
+  }, [showPopup]);
 
   return (
     <div

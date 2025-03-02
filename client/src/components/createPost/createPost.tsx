@@ -1,5 +1,5 @@
 'use client';
-
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useCreatePost } from "@/context/CreatePostContext";
@@ -10,7 +10,6 @@ export default function CreatePost() {
   const { isOpen, closePost } = useCreatePost();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  // Now storing category as a number (the category id)
   const [category, setCategory] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +80,7 @@ export default function CreatePost() {
             Създай публикация
           </h2>
           <button onClick={closePost} className="text-xl cursor-pointer">
-            x
+            <X size={24} stroke="currentColor" className="dark:stroke-d-cadet-gray" />
           </button>
         </div>
         <div className="flex-[15] flex flex-col gap-4">
@@ -103,7 +102,7 @@ export default function CreatePost() {
             <CustomSelect onChange={(value: number) => setCategory(value)} />
           </div>
           <button
-            className="bg-safety-orange p-2 select-none"
+            className="bg-safety-orange p-2 select-none text-white rounded"
             onClick={handleSubmit}
             disabled={loading}
           >

@@ -12,7 +12,6 @@ const SignUp: React.FC = () => {
 
   const router = useRouter();
 
-  // Handle signup form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -24,7 +23,6 @@ const SignUp: React.FC = () => {
       });
       console.log('Registration success:', response.data);
 
-      // If JWT tokens are returned, store the access token in a secure cookie
       if (response.data.tokens && response.data.tokens.access) {
         document.cookie = `token=${response.data.tokens.access}; path=/; Secure; SameSite=Strict`;
         sessionStorage.setItem("showPopup", "true");

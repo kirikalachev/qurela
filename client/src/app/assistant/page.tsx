@@ -1,19 +1,40 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import Image from 'next/image';
 import ArrowRight from '@/app/arrow-right.svg';
-import Trash from '@/app/trash.svg';
-import Download from '@/app/download.svg';
-import Copy from '@/app/copy.svg';
-import OptionsButton from '@/app/assistant/optionsButton';
+import { Trash2, Download, Copy } from "lucide-react";
 import CopyText from "@/app/assistant/CopyText";
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 
+interface ChatMessage {
+  text: string;
+}
+
+interface Conversation {
+  id: number;
+  main_title: string;
+  created_at: string;
+  messages: ChatMessage[];
+}
+
+interface ResponseResult {
+  url: string;
+  title: string;
+  snippet: string;
+  score: number;
+}
+
+interface ResponseData {
+  main_title: string;
+  category: string;
+  query: string;
+  results: ResponseResult[];
+}
+
 export default function Home() {
   const router = useRouter();
 
-  // Check for token on page load
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -22,15 +43,14 @@ export default function Home() {
   }, [router]);
 
   const ChatComponent = () => {
-    const [showCopyText, setShowCopyText] = useState(false);
-    const [savedChats, setSavedChats] = useState([]);
-    const [inputText, setInputText] = useState('');
-    const [selectedMode, setSelectedMode] = useState('Проверка на информация');
-    const [response, setResponse] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [showCopyText, setShowCopyText] = useState<boolean>(false);
+    const [savedChats, setSavedChats] = useState<Conversation[]>([]);
+    const [inputText, setInputText] = useState<string>('');
+    const [selectedMode, setSelectedMode] = useState<string>('Проверка на информация');
+    const [response, setResponse] = useState<ResponseData | null>(null);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string>('');
 
-    // On mount, extract query parameters and (optionally) auto-submit
     useEffect(() => {
       const params = new URLSearchParams(window.location.search);
       const message = params.get("message");
@@ -41,14 +61,12 @@ export default function Home() {
       if (mode) {
         setSelectedMode(mode);
       }
-      // Auto-submit if a message was passed
       if (message) {
         handleAutoSubmit(message, mode || selectedMode);
       }
-    }, []);
+    }, [selectedMode]);
 
-    // Function to automatically submit a chat message (extracted from query)
-    const handleAutoSubmit = async (message, mode) => {
+    const handleAutoSubmit = async (message: string, mode: string): Promise<void> => {
       setLoading(true);
       setError('');
       setResponse(null);
@@ -66,8 +84,8 @@ export default function Home() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            message: message,
-            mode: mode
+            message,
+            mode
           })
         });
         const data = await res.json();
@@ -76,14 +94,17 @@ export default function Home() {
         }
         setResponse(data.response);
       } catch (err) {
-        setError(err.message || 'Нещо се обърка.');
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Нещо се обърка.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    // Normal form submission (if user makes edits and resubmits)
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
       e.preventDefault();
       setLoading(true);
       setError('');
@@ -112,14 +133,17 @@ export default function Home() {
         }
         setResponse(data.response);
       } catch (err) {
-        setError(err.message || 'Нещо се обърка.');
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Нещо се обърка.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    // Function to delete a conversation
-    const handleDeleteConversation = async (conversationId) => {
+    const handleDeleteConversation = async (conversationId: number): Promise<void> => {
       const token = Cookies.get("token");
       if (!token) return;
 
@@ -141,7 +165,6 @@ export default function Home() {
       }
     };
 
-    // Fetch saved chats from the backend
     useEffect(() => {
       const token = Cookies.get("token");
       if (!token) return;
@@ -152,7 +175,7 @@ export default function Home() {
         }
       })
         .then(res => res.json())
-        .then(data => setSavedChats(data))
+        .then((data: Conversation[]) => setSavedChats(data))
         .catch(err => console.error("Error fetching conversations:", err));
     }, []);
 
@@ -175,11 +198,10 @@ export default function Home() {
                   <select
                     value={selectedMode}
                     onChange={(e) => setSelectedMode(e.target.value)}
-                    className="dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
+                    className="dark:text-d-cadet-gray dark:bg-d-charcoal dark:text-d-cadet-gray bg-platinum-gray rounded-full flex justify-center items-center cursor-pointer text-center text-sm outline-none"
                   >
-                    <option value="Проверка на информация">Проверка</option>
-                    <option value="Задайте въпрос">Въпрос</option>
-                    <option value="Обобщи информация">Обобщение</option>
+                    <option className='dark:text-d-cadet-gray' value="Проверка на информация">Проверка</option>
+                    <option className='dark:text-d-cadet-gray' value="Задайте въпрос">Въпрос</option>
                   </select>
                   <button
                     type="submit"
@@ -192,85 +214,80 @@ export default function Home() {
               </form>
 
               <div className="relative bg-white rounded-xl flex-[5] overflow-hidden flex flex-col dark:bg-d-rich-black">
-  <h3 className="flex-[2] border-l-green-500 border-l-[7px] flex items-center">
-    <span className="dark:text-d-cadet-gray mx-2 text-base font-semibold">
-      {loading
-        ? 'Зареждане...'
-        : response && typeof response === 'object' && response.main_title
-        ? response.main_title
-        : 'Резултат'}
-    </span>
-  </h3>
-  <button
-    onClick={() => {
-      const element = document.querySelector('.copy-text');
-      if (element && element.textContent) {
-        navigator.clipboard.writeText(element.textContent).then(() => {
-          setShowCopyText(true);
-          setTimeout(() => setShowCopyText(false), 2000);
-        });
-      }
-    }}
-    className="absolute top-2 right-2 rounded-xl transition-all active:bg-gray-300 flex items-center justify-center w-8 h-8"
-    title="Копиране"
-  >
-    <Image src={Copy} alt="Копиране" />
-  </button>
-  <div className="flex-[9] h-max border-l-platinum-gray-300 dark:border-l-d-charcoal-300 border-l-[7px] flex">
-    <span className="dark:text-d-cadet-gray mx-2 my-5 text-sm overflow-y-auto h-[150px] copy-text">
-      {error
-        ? `Грешка: ${error}`
-        : response && typeof response === 'object'
-        ? (
-          <div>
-            <p>Category: {response.category}</p>
-            <p>Query: {response.query}</p>
-            <ul>
-              {response.results?.map((item, index) => (
-                <li key={index}>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    {item.title}
-                  </a>
-                  <p>{item.snippet}</p>
-                  <p>Score: {item.score}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-        : response || 'Тук ще се появи отговорът от сървъра.'}
-    </span>
-  </div>
-  <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
-    <div
-      onClick={() => {
-        const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
-        const outputContent = response
-          ? `Output: ${typeof response === 'object' ? JSON.stringify(response, null, 2) : response}`
-          : "Output: (няма наличен отговор)";
-        const content = `${inputContent}\n\n${outputContent}`;
-        const blob = new Blob([content], { type: "text/plain" });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "chat_output.txt";
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }}
-      className="flex items-center cursor-pointer"
-    >
-      <Image src={Download} alt="Изтегляне" />
-      <span>Изтегляне</span>
-    </div>
-    <div className="flex items-center cursor-pointer">
-      <Image src={Trash} alt="Изтриване" />
-      <span>Изтриване</span>
-    </div>
-  </div>
-</div>
-
+                <h3 className="flex-[2] border-l-green-500 border-l-[7px] flex items-center">
+                  <span className="dark:text-d-cadet-gray mx-2 text-base font-semibold">
+                    {loading
+                      ? 'Зареждане...'
+                      : response && typeof response === 'object' && response.main_title
+                        ? response.main_title
+                        : 'Резултат'}
+                  </span>
+                </h3>
+                <button
+                  onClick={() => {
+                    const element = document.querySelector('.copy-text');
+                    if (element && element.textContent) {
+                      navigator.clipboard.writeText(element.textContent).then(() => {
+                        setShowCopyText(true);
+                        setTimeout(() => setShowCopyText(false), 2000);
+                      });
+                    }
+                  }}
+                  className="absolute top-2 right-2 rounded-xl transition-all active:bg-gray-300 flex items-center justify-center w-8 h-8"
+                  title="Копиране"
+                >
+                  <Copy size={20} stroke="currentColor" className="dark:stroke-d-cadet-gray" />
+                </button>
+                <div className="flex-[9] h-max border-l-platinum-gray-300 dark:border-l-d-charcoal border-l-[7px] flex">
+                  <span className="dark:text-d-cadet-gray mx-2 my-5 text-sm overflow-y-auto h-[150px] copy-text">
+                    {error
+                      ? `Грешка: ${error}`
+                      : response && typeof response === 'object'
+                        ? (
+                          <div>
+                            <p className='dark:text-d-cadet-gray'>Category: {response.category}</p>
+                            <p className='dark:text-d-cadet-gray'>Query: {response.query}</p>
+                            <ul className='dark:text-d-cadet-gray'>
+                              {response.results?.map((item, index) => (
+                                <li key={index} className='dark:text-d-cadet-gray'>
+                                  <a href={item.url} target="_blank" rel="noopener noreferrer" className='dark:text-d-cadet-gray'>
+                                    {item.title}
+                                  </a>
+                                  <p className='dark:text-d-cadet-gray'>{item.snippet}</p>
+                                  <p className='dark:text-d-cadet-gray'>Score: {item.score}</p>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )
+                        : response || 'Тук ще се появи отговорът от сървъра.'}
+                  </span>
+                </div>
+                <div className="flex-[2] w-full h-[10%] bg-gray-300 flex gap-4 px-4 justify-end dark:bg-d-charcoal">
+                  <div
+                    onClick={() => {
+                      const inputContent = inputText ? `Input: ${inputText}` : "Input: (няма въведени данни)";
+                      const outputContent = response
+                        ? `Output: ${typeof response === 'object' ? JSON.stringify(response, null, 2) : response}`
+                        : "Output: (няма наличен отговор)";
+                      const content = `${inputContent}\n\n${outputContent}`;
+                      const blob = new Blob([content], { type: "text/plain" });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = "chat_output.txt";
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    }}
+                    className="flex items-center cursor-pointer gap-2"
+                  >
+                  <Download size={20} stroke="currentColor" className="dark:stroke-d-cadet-gray" />
+                  <span className='dark:text-d-cadet-gray'>Изтегляне</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Right Panel – Chat history */}
@@ -281,36 +298,42 @@ export default function Home() {
               <ul className="text-sm m-0 flex flex-col dark:text-d-cadet-gray overflow-y-auto h-[70vh]">
                 {savedChats.length > 0 ? (
                   savedChats.map((conversation) => (
-                    <li 
-                      key={conversation.id} 
-                      className="flex justify-between items-center p-2 border-b-[2px] border-gray-300 hover:bg-gray-100 dark:hover:bg-d-gunmetal"
+                    <li
+                      key={conversation.id}
+                      className="dark:text-d-cadet-gray flex justify-between items-center p-2 border-b-[2px] border-gray-300 hover:bg-gray-100 dark:hover:bg-d-gunmetal"
                       onClick={() => {
                         console.log("Clicked conversation:", conversation);
                         if (conversation.messages.length >= 2) {
                           setInputText(conversation.messages[0].text);
-                          setResponse(conversation.messages[1].text);
+                          setResponse({ 
+                            main_title: conversation.main_title, 
+                            category: "", 
+                            query: "", 
+                            results: [{ url: "", title: conversation.messages[1].text, snippet: "", score: 0 }] 
+                          });
                         } else {
                           setInputText('');
-                          setResponse('Все още няма отговор.');
+                          setResponse(null);
+                          setError('Все още няма отговор.');
                         }
                       }}
                     >
-                      <span>
-                        Chat #{conversation.id} – {new Date(conversation.created_at).toLocaleString()}
+                      <span className='dark:text-d-cadet-gray'>
+                        {conversation.main_title || "Без заглавие"} – {new Date(conversation.created_at).toLocaleString()}
                       </span>
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteConversation(conversation.id);
-                        }} 
+                        }}
                         title="Изтриване"
                       >
-                        <Image src={Trash} alt="Изтриване" />
+                        <Trash2 size={20} stroke="currentColor" className="dark:stroke-d-cadet-gray" />
                       </button>
                     </li>
                   ))
                 ) : (
-                  <li className="p-2 text-center">Няма запазени чатове</li>
+                  <li className="p-2 text-center dark:text-d-cadet-gray">Няма запазени чатове</li>
                 )}
               </ul>
             </div>

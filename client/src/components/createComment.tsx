@@ -15,7 +15,6 @@ export default function CreateComment({ postId, onCommentAdded }: CreateCommentP
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // 🔐 Fetch user profile (check authentication)
   useEffect(() => {
     const token = Cookies.get("token");
     if (!token) {
@@ -85,7 +84,7 @@ export default function CreateComment({ postId, onCommentAdded }: CreateCommentP
       ) : (
         <>
           <textarea
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 border rounded-md dark:bg-d-charcoal dark:text-d-cadet-gray outline-none"
             placeholder="Напишете коментар..."
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}

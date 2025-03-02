@@ -8,13 +8,13 @@ interface CreatePostContextType {
   postDetails: {
     title: string;
     content: string;
-    category: string; // Store selected category
+    category: string; 
   };
-  categories: string[]; // Store available categories from the DB
-  setCategory: (category: string) => void; // Method to update selected category
+  categories: string[]; 
+  setCategory: (category: string) => void; 
   setTitle: (title: string) => void;
   setContent: (content: string) => void;
-  fetchCategories: () => void; // Method to fetch categories from DB
+  fetchCategories: () => void; 
 }
 
 const CreatePostContext = createContext<CreatePostContextType | undefined>(undefined);
@@ -24,7 +24,7 @@ export const CreatePostProvider = ({ children }: { children: ReactNode }) => {
   const [postDetails, setPostDetails] = useState({
     title: "",
     content: "",
-    category: "", // Store category
+    category: "", 
   });
   const [categories, setCategories] = useState<string[]>([]);
 
@@ -34,21 +34,21 @@ export const CreatePostProvider = ({ children }: { children: ReactNode }) => {
   const setCategory = (category: string) => {
     setPostDetails((prevState) => ({
       ...prevState,
-      category, // Update category in postDetails
+      category, 
     }));
   };
 
   const setTitle = (title: string) => {
     setPostDetails((prevState) => ({
       ...prevState,
-      title, // Update title
+      title, 
     }));
   };
 
   const setContent = (content: string) => {
     setPostDetails((prevState) => ({
       ...prevState,
-      content, // Update content
+      content, 
     }));
   };
 
@@ -56,7 +56,7 @@ export const CreatePostProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await fetch("http://127.0.0.1:8000/forum/categories/");
       const data = await response.json();
-      setCategories(data); // Store categories fetched from DB
+      setCategories(data); 
     } catch (error) {
       console.error("Error fetching categories:", error);
     }

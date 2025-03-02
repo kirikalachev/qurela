@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { InstagramIcon, Mail } from "lucide-react";
 
 export default function Footer() {
     return (
@@ -40,10 +41,21 @@ export default function Footer() {
             </div>
   
             <div className='flex-1'>
-              <h2 className='uppercase font-semibold text-lg'>свържи се с нас</h2>
+              <h2 className='uppercase font-semibold text-lg'>Свържи се с нас</h2>
               <ul>
-                <li>Facebook</li>
-                <li>qurela@info.com</li>
+              <li>                
+                <Link href="https://instagram.com/qurela" target="_blank" rel="noopener noreferrer"  className="flex items-center gap-2">
+                  <InstagramIcon size={24} stroke="currentColor" className="dark:stroke-white" />
+                  Qurela
+                </Link>
+              </li>
+
+              <li className="flex items-center gap-2">
+                <Link href="mailto:qurela.team@gmail.com" className="hover:underline flex items-center gap-2">
+                <Mail size={24} stroke="currentColor" className="dark:stroke-white" />
+                  qurela.team@gmail.com
+                </Link>
+              </li>
               </ul>
             </div>
           </div>
