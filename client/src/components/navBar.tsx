@@ -345,7 +345,7 @@ const Navbar: React.FC = () => {
       {/* Mobile Navbar */}
       <nav className="md:hidden fixed top-0 left-0 right-0 flex items-center justify-between p-3 bg-marian-blue shadow-lg z-50">
         <button onClick={toggleMobileNav} className="p-1">
-        <Menu size={24} className="text-white" />
+        <Menu size={24} stroke="white"/>
         </button>
         <h1 className="text-3xl font-semibold text-white">
           <Link href="/dashboard">Qurela</Link>
