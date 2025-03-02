@@ -113,14 +113,14 @@ export default function App() {
         <h2 className="text-marian-blue text-3xl font-bold mb-8">Нашият екип</h2>
         <div className="flex flex-col md:flex-row justify-between w-full md:w-1/2 gap-8">
           <div className="flex flex-col justify-center items-center">
-            <img src="/roblox.png" alt="Кирил" className="w-32 h-auto" />
+            <img src="/kiril.png" alt="Кирил" className="w-[18vw] h-auto" />
             <p className="text-[#2e2e2e] text-lg mt-4">
               Кирил, 16
             </p>
           </div>
 
           <div className="flex flex-col justify-center items-center">
-            <img src="/roblox.png" alt="Християн" className="w-32 h-auto" />
+            <img src="/hristiqn.png" alt="Християн" className="w-[18vw] h-auto" />
             <p className="text-[#2e2e2e] text-lg mt-4">
               Християн, 16
             </p>

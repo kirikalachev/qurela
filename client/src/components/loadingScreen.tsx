@@ -4,8 +4,7 @@ import { motion } from "framer-motion";
 import ArrowRight from '@/app/arrow-right.svg';
 import Image from 'next/image';
 
-// ✅ Define valid keys for 'data'
-type ActiveType = "question" | "check" | "summarize";
+type ActiveType = "question" | "check";
 
 const YourComponent = () => {
   const [selectedType, setSelectedType] = useState<ActiveType>("check");
@@ -22,11 +21,6 @@ const YourComponent = () => {
       heading: 'Студената вода причинява ангина',
       input: "Пиенето на студена вода причинява ангина.",
       output: "Ангината се причинява от вируси или бактерии, а не от температурата на водата..."
-    },
-    summarize: {
-      heading: 'Съкратен текст: Витамин C',
-      input: `Витамин C е основно хранително вещество...`,
-      output: `Витамин C подпомага имунитета, образуването на колаген и усвояването на желязото...`
     }
   };
 
@@ -64,7 +58,6 @@ const YourComponent = () => {
             >
               <option value="check">Проверка</option>
               <option value="question">Въпрос</option>
-              <option value="summarize">Обобщение</option>
             </select>
             <button
               className="aspect-square bg-marian-blue rounded-full flex justify-center items-center cursor-pointer"

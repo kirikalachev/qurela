@@ -231,7 +231,7 @@ export default function ForumPage() {
   };
   
   if (loading) {
-    return <p className="min-h-[100vh]">Зареждане...</p>;
+    return <p className="min-h-[100vh]"></p>;
   }
 
   if (error) {

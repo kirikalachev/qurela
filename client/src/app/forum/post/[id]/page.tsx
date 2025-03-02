@@ -96,7 +96,7 @@ const PostDetailPage = () => {
   };
 
   if (error) return <p>{error}</p>;
-  if (loading || !post) return <p>Loading...</p>;
+  if (loading || !post) return <p className="min-h-[100vh]"></p>;
 
   const copyToClipboard = async (postId: number) => {
     try {
