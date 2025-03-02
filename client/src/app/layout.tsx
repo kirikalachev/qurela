@@ -2,10 +2,11 @@
 import { usePathname } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Metadatafunc from "@/app/metadata";
 import NavigationBar from '@/components/navBar';
 import Footer from '@/components/footer';
 import { CreatePostProvider } from "@/context/CreatePostContext"; 
+import Metadata from "@/app/metadata"; 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,9 +29,9 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <Metadatafunc />
+      <Metadata /> {/* ✅ Added Metadata component */}
       <body className="bg-gradient-to-b from-alice-blue to-uranian-blue dark:bg-gradient-to-b dark:from-night-color dark:to-night-color min-h-[100vh]">
-      <CreatePostProvider>
+        <CreatePostProvider>
           {!isSignInPage && !isSignUpPage && <NavigationBar />}
           {children}
           {!isSignInPage && !isSignUpPage && <Footer />}
