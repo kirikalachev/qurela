@@ -24,7 +24,7 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "https://www.qurela.com/people.jpg",
+        url: "/people.jpg",
         width: 1200,
         height: 630,
         alt: "Qurela Banner",
@@ -35,7 +35,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Qurela",
     description: "Проверена медицинска информация на едно място.",
-    images: ["https://www.qurela.com/people.jpg"],
+    images: ["/people.jpg"],
   },
 };
 
