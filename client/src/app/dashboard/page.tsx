@@ -8,7 +8,7 @@ import axios from "axios"
 import Cookies from "js-cookie"
 import Link from "next/link"
 import PopupNotification from "../../components/popupNottification"
-import CreateComment from "@/components/CreateComment";
+import CreateComment from "@/components/createComment";
 import ProfileAvatar from "@/components/profileAvatar"; 
 import { ThumbsUp, ThumbsDown, MessageCircle, Share2, ExternalLink } from "lucide-react";
 

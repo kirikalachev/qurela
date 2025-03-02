@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import CreateComment from "@/components/CreateComment"; 
+import CreateComment from "@/components/createComment"; 
 import { ThumbsUp, ThumbsDown, MessageCircle, Share2, Search, ExternalLink } from "lucide-react";
 import ProfileAvatar from "@/components/profileAvatar"; 
 

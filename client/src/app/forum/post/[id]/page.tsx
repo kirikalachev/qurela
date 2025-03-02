@@ -3,7 +3,7 @@ import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-import CreateComment from "@/components/CreateComment";
+import CreateComment from "@/components/createComment";
 import ProfileAvatar from "@/components/profileAvatar"; 
 import { ThumbsUp, ThumbsDown, Share2 } from "lucide-react";
 
