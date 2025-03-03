@@ -396,8 +396,8 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`h-full py-10 px-4 bg-marian-blue fixed top-14 left-0 w-full flex-col items-center justify-between overflow-hidden transition-all duration-300 ${
-            mobileNav ? "max-h-[95vh] opacity-100 scale-100 flex" : "hidden max-h-0 opacity-0 scale-95"
+          className={`h-full py-10 px-4 bg-marian-blue fixed top-14 left-0 w-full flex flex-col items-center justify-between overflow-hidden transition-all duration-300 ${
+            mobileNav ? "max-h-[95vh] opacity-100 scale-100 visible" : "invisible max-h-0 opacity-0 scale-95"
           }`}
         >
 
