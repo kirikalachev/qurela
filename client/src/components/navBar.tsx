@@ -396,8 +396,8 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         <div
-          className={`h-full py-10 px-4 bg-marian-blue fixed top-14 left-0 w-full flex flex-col items-center justify-between overflow-hidden transition-all duration-300 ${
-            mobileNav ? "max-h-full opacity-100 scale-100" : "max-h-0 opacity-0 scale-95"
+          className={`h-full py-10 px-4 bg-marian-blue fixed top-14 left-0 w-full flex-col items-center justify-between overflow-hidden transition-all duration-300 ${
+            mobileNav ? "max-h-[92vh] opacity-100 scale-100 flex" : "hidden max-h-0 opacity-0 scale-95"
           }`}
         >
           {/* Primary list */}
@@ -415,19 +415,19 @@ const Navbar: React.FC = () => {
 
           {/* Secondary list */}
           <ul className="w-full flex flex-col items-start text-sm text-gray-600 cursor-pointer ">
-            <li className="py-1 text-center" onClick={toggleMobileNav}>
+            <li className="py-1 text-center text-white" onClick={toggleMobileNav}>
               <Link href="/info#about-us">За сайта</Link>
             </li>
-            <li className="py-1 text-center" onClick={toggleMobileNav}>
+            <li className="py-1 text-center text-white" onClick={toggleMobileNav}>
               <Link href="/info#features">Инструкции</Link>
             </li>
-            <li className="py-1 text-center" onClick={toggleMobileNav}>
+            <li className="py-1 text-center text-white" onClick={toggleMobileNav}>
               <Link href="/info#faq">ЧЗВ</Link>
             </li>
-            <li className="py-1 text-center" onClick={toggleMobileNav}>
+            <li className="py-1 text-center text-white" onClick={toggleMobileNav}>
               <Link href="/resources#privacy-policy">Политика за поверителност</Link>
             </li>
-            <li className="py-1 text-center" onClick={toggleMobileNav}>
+            <li className="py-1 text-center text-white" onClick={toggleMobileNav}>
               <Link href="/resources#terms-of-use">Условия на ползване</Link>
             </li>
           </ul>
