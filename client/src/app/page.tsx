@@ -56,10 +56,10 @@ export default function App() {
 
           <div className="w-[70%] h-[2px] bg-gray-400"></div>
 
-          <div className="flex gap-3 items-center">
+          {/* <div className="flex gap-3 items-center">
             <span className="text-2xl text-safety-orange font-semibold">126 592</span>
             <span className="text-lg text-marian-blue font-semibold">Проверени твърдения</span>
-          </div>
+          </div> */}
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 50 }}
