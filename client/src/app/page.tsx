@@ -58,7 +58,7 @@ export default function App() {
 
           <div className="flex gap-3 items-center">
             <span className="text-2xl text-safety-orange font-semibold">100+</span>
-            <span className="text-lg text-marian-blue font-semibold">Проверени твърдения</span>
+            <span className="text-lg text-marian-blue font-semibold">Направени проверки</span>
           </div>
         </motion.div>
         <motion.div
