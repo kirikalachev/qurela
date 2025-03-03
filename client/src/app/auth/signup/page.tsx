@@ -35,7 +35,7 @@ const SignUp: React.FC = () => {
   };
 
   return (
-    <main className="h-[100vh] overflow-hidden">
+    <main className="h-[100vh] overflow-hidden z-[50]">
       <div className="absolute w-full h-full bg-rich-black">
         <video className="object-cover h-full w-full" autoPlay muted loop>
           <source src="/background.mp4" type="video/mp4" />
