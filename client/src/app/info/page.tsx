@@ -51,7 +51,7 @@ export default function Info() {
             {/* FAQ Section */}
             <section id="faq" className="max-w-3xl overflow-hidden my-10">
                 <h2 className="text-3xl font-semibold text-marian-blue mb-6">Често задавани въпроси</h2>
-                <div className="flex gap-4 flex-col w-[600px]">
+                <div className="flex gap-4 flex-col w-[90%]">
                     {[ 
                         { question: "Как да се регистрирам?", answer: "Просто натиснете бутона \"Регистрация\" и следвайте инструкциите." },
                         { question: "Как мога да нулирам паролата си?", answer: "Отидете в секцията \"Забравена парола\" и следвайте стъпките." },
@@ -61,7 +61,7 @@ export default function Info() {
                             <h3 className="dark:text-d-cadet-gray text-lg font-medium cursor-pointer p-3" onClick={() => toggleAnswer(index)}>
                                 {item.question}
                             </h3>
-                            <p className={`dark:text-d-cadet-gray w-full px-3 mt-2 overflow-hidden transition-all duration-300 ${openIndex === index ? 'max-h-12 py-3' : 'max-h-0 py-0'}`}>{item.answer}</p>
+                            <p className={`dark:text-d-cadet-gray w-full px-3 mt-2 overflow-hidden transition-all duration-300 ${openIndex === index ? 'max-h-[200px] py-3' : 'max-h-[0px] py-0'}`}>{item.answer}</p>
                         </div>
                     ))}
                 </div>

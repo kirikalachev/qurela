@@ -400,6 +400,9 @@ const Navbar: React.FC = () => {
             mobileNav ? "max-h-[95vh] opacity-100 scale-100 flex" : "hidden max-h-0 opacity-0 scale-95"
           }`}
         >
+
+      {isLogged ? (
+        <>
           {/* Primary list */}
           <ul className="w-full select-none bg-white rounded-lg shadow-md mb-2 text-base">
             <li className="py-2 text-center border-b border-gray-200 hover:bg-gray-100 transition-colors" onClick={toggleMobileNav}>
@@ -412,6 +415,10 @@ const Navbar: React.FC = () => {
               Създай публикация
             </li>
           </ul>
+        </>
+      ) : null}
+
+
 
           {/* Secondary list */}
           <ul className="w-full flex flex-col items-start text-sm text-gray-600 cursor-pointer ">
