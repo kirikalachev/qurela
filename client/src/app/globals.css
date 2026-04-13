@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #A7C7E7;
+  --primary-dark: #6CA6CD;
+  --primary-light: #BBD6F2;
+  --surface: #E0E0E0;
+  --background: #F5F5F5;
+  --accent: #F4A261;
+  --success: #8FBC8F;
+  --danger: #E57373;
+  --navy: #1E2A38;
+  --admin: #FF6B35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Verana', 'Arial', sans-serif;
+  background: var(--background);
+  color: var(--navy);
+}
+
+.retro-button {
+  background: linear-gradient(180deg, #A7C7E7 0%, #6CA6CD 100%);
+  border: 2px solid #4A8AB8;
+  box-shadow: 2px 2px 0px #4A8AB8;
+  transition: all 0.1s ease;
+}
+
+.retro-button:hover {
+  background: linear-gradient(180deg, #BBD6F2 0%, #A7C7E7 100%);
+}
+
+.retro-button:active {
+  box-shadow: inset 2px 2px 4px rgba(0,0,0,0.2);
+  transform: translate(1px, 1px);
+}
+
+.retro-card {
+  background: linear-gradient(180deg, #F5F5F5 0%, #E8E8E8 100%);
+  border: 1px solid #CCCCCC;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 #FFFFFF;
+}
+
+.retro-input {
+  background: #FFFFFF;
+  border: 2px inset #CCCCCC;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.retro-input:focus {
+  border-color: #6CA6CD;
+  box-shadow: 0 0 4px rgba(106, 166, 205, 0.3);
+}
